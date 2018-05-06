@@ -5,7 +5,6 @@ config = {}
 
 ##################################################################
 # Please note that the following fields will be updated by us to re-train and re-evaluate your model. 
-#
 # Where experiment results are stored.
 config['log_dir'] = './runs/'
 # In case your pre/post-processing scripts generate intermediate results, you may use config['tmp_dir'] to store them.
