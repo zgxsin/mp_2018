@@ -3,7 +3,7 @@ import time
 import json
 
 import tensorflow as tf
-from model_input import  input_pipeline
+from model_input import input_pipeline
 from model import CNNModel, RNNModel
 
 def main(config):
@@ -26,7 +26,7 @@ def main(config):
                                            name='training_input_pipeline',
                                            shuffle=True)
 
-    # Create input placeholders for training data.
+    # Create input placeholders for validation data.
     valid_tfrecord_files = [os.path.join(config['valid_data_dir'], "dataValidation_%d.tfrecords"%i) for i in range(1, 16)]
     validation_placeholders = input_pipeline(tfrecord_files=valid_tfrecord_files,
                                                config=config['inputs'],

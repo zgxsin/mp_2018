@@ -11,9 +11,9 @@ config['log_dir'] = './runs/'
 # In case your pre/post-processing scripts generate intermediate results, you may use config['tmp_dir'] to store them.
 config['tmp_dir'] = './tmp/'
 # Path to training, validation and test data folders.
-config['train_data_dir'] = "./train/"
-config['valid_data_dir'] = "./validation/"
-config['test_data_dir'] = "./test/"
+config['train_data_dir'] = "../train/"
+config['valid_data_dir'] = "../validation/"
+config['test_data_dir'] = "../test/"
 ##################################################################
 # You can modify the rest or add new fields as you need.
 
@@ -23,14 +23,16 @@ config['num_validation_samples'] = 1765
 config['num_training_samples'] = 5722
 
 # Hyper-parameters and training configuration.
-config['batch_size'] = 16
+# config['batch_size'] = 16
+config['batch_size'] = 10   ## modified by GX
 config['learning_rate'] = 5e-4
 # Learning rate is annealed exponentially in 'exponential' case. Don't forget to change annealing configuration in the code.
 config['learning_rate_type'] = 'exponential' #'fixed' or 'exponential'
 
 config['num_steps_per_epoch'] = int(config['num_training_samples']/config['batch_size'])
 
-config['num_epochs'] = 25
+# config['num_epochs'] = 25
+config['num_epochs'] = 50 ## modified by GX
 config['evaluate_every_step'] = config['num_steps_per_epoch']*2
 config['checkpoint_every_step'] = config['num_steps_per_epoch']*5
 config['num_validation_steps'] = int(config['num_validation_samples']/config['batch_size'])
@@ -58,7 +60,8 @@ config['cnn'] = {}
 config['cnn']['num_filters'] = [16,32,64,128,256] # Number of filters for every convolutional layer.
 config['cnn']['filter_size'] = [3,3,3,3,3,3] # Kernel size. Assuming kxk kernels.
 config['cnn']['num_hidden_units'] = 512 # Number of units in the last dense layer, i.e. representation size.
-config['cnn']['dropout_rate'] = 0.3
+# config['cnn']['dropout_rate'] = 0.3
+config['cnn']['dropout_rate'] = 0.4 ## modified by GX
 config['cnn']['num_class_labels'] = 20
 config['cnn']['batch_size'] = config['batch_size']
 config['cnn']['loss_type'] = config['loss_type']
