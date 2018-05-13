@@ -69,6 +69,7 @@ class Model():
         selecting the last step or taking average over all steps. You are welcome to implement a more sophisticated
         approach.
         """
+        #
         # Calculate logits
         with tf.variable_scope('logits', reuse=self.reuse, initializer=self.initializer, regularizer=None):
             dropout_layer = tf.layers.dropout(inputs=self.model_output_flat, rate=self.config['dropout_rate'], training=self.is_training)
@@ -81,9 +82,13 @@ class Model():
                 self.logits = tf.gather_nd(self.logits, tf.stack([tf.range(self.config['batch_size']), self.input_seq_len - 1], axis=1))
                 self.accuracy_logit = self.logits
             elif self.config['loss_type'] == 'average_logit': # Take average of time steps.
+                # shape of the self.seq_loss_mask is [batch_size, seq_len, 1 ]
+                # shape of self.logits is [batch_size, seq_len, class_labels]
                 self.logits = tf.reduce_mean(self.logits*self.seq_loss_mask, axis=1)
+
                 self.accuracy_logit = self.logits
             elif self.config['loss_type'] == 'average_loss':
+                # TODO_GX: this is a bug. It is same with above, need to be fixed
                 self.accuracy_logit = tf.reduce_mean(self.logits*self.seq_loss_mask, axis=1)
             else:
                 raise Exception("Invalid loss type")
@@ -162,6 +167,7 @@ class CNNModel(Model):
         with tf.variable_scope("cnn_model", reuse=self.reuse, initializer=self.initializer, regularizer=None):
             if input_layer is None:
                 # Here we use RGB modality only.
+                # TODO_GX: need some operations here
                 self.input_layer = self.input_rgb
             else:
                 self.input_layer = input_layer

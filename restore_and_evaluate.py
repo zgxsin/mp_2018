@@ -21,7 +21,8 @@ def main(config):
                                        shuffle=False,
                                        mode="inference")
 
-    test_input_layer = test_placeholders['rgb']
+    # test_input_layer = test_placeholders['rgb']
+    test_input_layer = tf.concat([test_placeholders['rgb'], test_placeholders['depth'] / 255], 4 )
 
     session = tf.Session()
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -41,7 +42,9 @@ def main(config):
         inferModel = RNNModel(config=config['rnn'],
                               placeholders=test_placeholders,
                               mode="inference")
-        inferModel.build_graph(input_layer=inferCnnModel.model_output)
+        ### add test skeleton info to the input layer of RNN
+        input2rnn_infer = tf.concat([test_placeholders['skeleton'], inferCnnModel.model_output],2)
+        inferModel.build_graph(input_layer=input2rnn_infer)
         inferModel.build_loss()
 
     # Restore computation graph.

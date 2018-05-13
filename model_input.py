@@ -29,7 +29,7 @@ def img_preprocessing_op(image_op):
     """
     with tf.name_scope("img_preprocessing"):
         # Convert from RGB to greyscale.
-        #image_op = tf.image.rgb_to_grayscale(image_op)
+        # image_op = tf.image.rgb_to_grayscale(image_op)
 
         # Crop
         #image_op = tf.image.resize_image_with_crop_or_pad(image_op, 60, 60)
@@ -106,7 +106,7 @@ def read_and_decode_sequence(filename_queue, config):
         # TODO
         # Here you can apply preprocessing/augmentation on input frames (it is commented).
         # tf.map_fn applies the preprocessing function on every image in the sequence, i.e., frame.
-        #seq_rgb = tf.map_fn(lambda x: img_preprocessing_op(x),
+        # seq_rgb = tf.map_fn(lambda x: img_preprocessing_op(x),
         #                    elems=seq_rgb,
         #                    dtype=tf.float32,
         #                    back_prop=False)

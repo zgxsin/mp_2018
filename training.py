@@ -33,8 +33,9 @@ def main(config):
                                                name='validation_input_pipeline',
                                                shuffle=False)
 
-    training_input_layer = training_placeholders['rgb']
-    validation_input_layer = validation_placeholders['rgb']
+    # add normalized depth info to the CNN training data
+    training_input_layer = tf.concat([training_placeholders['rgb'], training_placeholders['depth']/255],4)
+    validation_input_layer = tf.concat([validation_placeholders['rgb'],validation_placeholders['depth']/255], 4 )
 
     ##################
     # Training Model
@@ -51,7 +52,9 @@ def main(config):
         trainModel = RNNModel(config=config['rnn'],
                               placeholders=training_placeholders,
                               mode="training")
-        trainModel.build_graph(input_layer=cnnModel.model_output)
+        ### add training skeleton info to the input layer of RNN
+        input2rnn = tf.concat([training_placeholders['skeleton'], cnnModel.model_output], 2)
+        trainModel.build_graph(input_layer=input2rnn)
         trainModel.build_loss()
 
         print("\n# of parameters: %s"%trainModel.get_num_parameters())
@@ -87,7 +90,9 @@ def main(config):
         validModel = RNNModel(config=config['rnn'],
                               placeholders=validation_placeholders,
                               mode="validation")
-        validModel.build_graph(input_layer=validCnnModel.model_output)
+        ### add training skeleton info to the input layer of RNN
+        input2rnn_val = tf.concat([validation_placeholders['skeleton'], validCnnModel.model_output],2)
+        validModel.build_graph(input_layer=input2rnn_val)
         validModel.build_loss()
 
     ##############

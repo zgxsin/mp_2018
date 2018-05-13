@@ -22,8 +22,8 @@ config['num_validation_samples'] = 1765
 config['num_training_samples'] = 5722
 
 # Hyper-parameters and training configuration.
-config['batch_size'] = 16
-# config['batch_size'] = 10   ## modified by GX
+# config['batch_size'] = 16
+config['batch_size'] = 20   ## modified by GX
 config['learning_rate'] = 5e-4
 # Learning rate is annealed exponentially in 'exponential' case. Don't forget to change annealing configuration in the code.
 config['learning_rate_type'] = 'exponential' #'fixed' or 'exponential'
@@ -42,6 +42,7 @@ config['print_every_step'] = 50
 # (2) 'average_logit': calculate loss by using average of predictions across all steps.
 # (3) 'average_loss': calculate loss for each time-step by using the same sequence label.
 config['loss_type'] = 'average_logit' # 'last_logit', 'average_logit', 'average_loss'.
+# config['loss_type'] = 'last_logit' # GX_modified
 
 # Dataset and Input Pipeline Configuration
 config['inputs'] = {}
@@ -67,8 +68,10 @@ config['cnn']['loss_type'] = config['loss_type']
 
 # RNN model parameters
 config['rnn'] = {}
-config['rnn']['num_hidden_units'] = 512 # Number of units in an LSTM cell.
-config['rnn']['dropout_rate'] = 0.3
+# config['rnn']['num_hidden_units'] = 512 # Number of units in an LSTM cell.
+config['rnn']['num_hidden_units'] = 512 # GX add
+# config['rnn']['dropout_rate'] = 0.3
+config['rnn']['dropout_rate'] = 0.4 ## GX add
 config['rnn']['num_layers'] = 1 # Number of LSTM stack.
 config['rnn']['num_class_labels'] = 20
 config['rnn']['batch_size'] = config['batch_size']
