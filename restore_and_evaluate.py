@@ -22,12 +22,12 @@ def main(config):
                                        mode="inference")
 
     # test_input_layer = test_placeholders['rgb']
-    test_input_layer = tf.concat([test_placeholders['rgb'], test_placeholders['depth'] / 255], 4 )
+    test_input_layer = tf.concat([test_placeholders['rgb'], test_placeholders['depth'], test_placeholders['skeleton']], 4 )
 
     session = tf.Session()
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
     session.run(init_op)
-    visual_skele = session.run( [test_placeholders['skeleton']] )
+    # visual_skele = session.run( [test_placeholders['skeleton']] )
 
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(sess=session, coord=coord)
