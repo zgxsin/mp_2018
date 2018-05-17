@@ -27,7 +27,7 @@ config['batch_size'] = 20   ## modified by GX
 config['learning_rate'] = 5e-4
 # Learning rate is annealed exponentially in 'exponential' case. Don't forget to change annealing configuration in the code.
 config['learning_rate_type'] = 'exponential' #'fixed' or 'exponential'
-
+config['regularization_rate'] = 0.0001 # this is the rate for L2 or L1 regularizer
 config['num_steps_per_epoch'] = int(config['num_training_samples']/config['batch_size'])
 
 config['num_epochs'] = 25
@@ -65,6 +65,8 @@ config['cnn']['dropout_rate'] = 0.4 ## modified by GX
 config['cnn']['num_class_labels'] = 20
 config['cnn']['batch_size'] = config['batch_size']
 config['cnn']['loss_type'] = config['loss_type']
+config['cnn']['regularization_rate'] = 0.0001 # this is the rate for L2 or L1 regularizer
+config['cnn']['moving_average_decay'] = 0.99 # moving_average_rate
 
 # RNN model parameters
 config['rnn'] = {}
@@ -76,6 +78,8 @@ config['rnn']['num_layers'] = 1 # Number of LSTM stack.
 config['rnn']['num_class_labels'] = 20
 config['rnn']['batch_size'] = config['batch_size']
 config['rnn']['loss_type'] = config['loss_type']
+config['rnn']['regularization_rate'] = 0.0001 # this is the rate for L2 or L1 regularizer
+config['rnn']['moving_average_decay'] = 0.99 # moving_average_rate
 
 
 # You can set descriptive experiment names or simply set empty string ''.
