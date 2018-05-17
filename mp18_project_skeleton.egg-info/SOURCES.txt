@@ -1,7 +1,0 @@
-README.md
-setup.py
-mp18_project_skeleton.egg-info/PKG-INFO
-mp18_project_skeleton.egg-info/SOURCES.txt
-mp18_project_skeleton.egg-info/dependency_links.txt
-mp18_project_skeleton.egg-info/requires.txt
-mp18_project_skeleton.egg-info/top_level.txt
