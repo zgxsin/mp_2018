@@ -1,4 +1,6 @@
 import tensorflow as tf
+from Skeleton import Skeleton
+import numpy as np
 
 
 def get_mean_and_std(tensor, axis, keepdims=False):
@@ -47,9 +49,18 @@ def img_preprocessing_op(image_op):
         # image_op = tf.image.per_image_standardization(image_op)
 
         # Flatten image
-        #image_op = tf.reshape(image_op, [-1])
+        # y.set_shape(image_op.get_shape())
+        # image_op_ = tf.TensorArray(
+        #     dtype=tf.float32, size=0, dynamic_size=True)
 
-        return image_op
+        image_op_ = np.ones(shape=[image_op.shape[0], 80, 80, 3], dtype=np.float32)
+
+        for i in range(image_op.shape[0]):
+            skeleton = Skeleton(image_op[i])
+            skeleton.resizePixelCoordinates()
+            image_op_[i] = skeleton.toImage(80, 80)
+
+        return image_op_.astype(np.float32)
 
 def read_and_decode_sequence(filename_queue, config):
     # Create a TFRecordReader.
@@ -100,16 +111,27 @@ def read_and_decode_sequence(filename_queue, config):
         seq_rgb = tf.to_float(tf.reshape(seq_rgb, (-1, config['img_height'], config['img_width'], 3)))
         seq_depth = tf.to_float(tf.reshape(seq_depth, (-1, config['img_height'], config['img_width'], 1)))
         seq_segmentation = tf.to_float(tf.reshape(seq_segmentation, (-1, config['img_height'], config['img_width'], 3)))
-        seq_skeleton = tf.reshape(seq_skeleton, (seq_len, 180))
+        seq_skeleton = tf.to_float(tf.reshape(seq_skeleton, (-1, 180)))
 
         ###############################
         # TODO
         # Here you can apply preprocessing/augmentation on input frames (it is commented).
         # tf.map_fn applies the preprocessing function on every image in the sequence, i.e., frame.
-        # seq_rgb = tf.map_fn(lambda x: img_preprocessing_op(x),
-        #                    elems=seq_rgb,
-        #                    dtype=tf.float32,
-        #                    back_prop=False)
+
+        # skeleton_dim = 80*80*3*tf.shape(seq_skeleton)[0]
+        # [tf.float32]*skeleton_dim.
+
+        seq_skeleton = tf.py_func(lambda x:img_preprocessing_op(x),
+                           [seq_skeleton],
+                            tf.float32,
+                            )
+        seq_skeleton.set_shape([None, 80, 80, 3])
+
+        # for frame_index in range(seq_skeleton.shape[0]):
+        #     seq_skeleton[frame_index]=img_preprocessing_op(seq_skeleton[frame_index])
+
+
+
 
         # Normalize RGB images before feeding into the model.
         # TODO
@@ -118,6 +140,10 @@ def read_and_decode_sequence(filename_queue, config):
         rgb_mean, rgb_std = get_mean_and_std(seq_rgb, axis=[0, 1, 2, 3], keepdims=True)
         seq_rgb = (seq_rgb - rgb_mean)/rgb_std
 
+        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton, axis=[0, 1, 2, 3], keepdims=True )
+        seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
+
+        seq_depth = seq_depth/255
         # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
         # the same format.
         sample = {}
@@ -190,6 +216,11 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         #                    elems=seq_rgb,
         #                    dtype=tf.float32,
         #                    back_prop=False)
+        seq_skeleton = tf.py_func( lambda x: img_preprocessing_op( x ),
+                                   [seq_skeleton],
+                                   tf.float32,
+                                   )
+        seq_skeleton.set_shape([None, 80, 80, 3] )
 
         # Normalize RGB images before feeding into the model.
         # TODO
@@ -197,6 +228,11 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         # and calculate global statistics for later use.
         rgb_mean, rgb_std = get_mean_and_std(seq_rgb, axis=[0, 1, 2, 3], keepdims=True)
         seq_rgb = (seq_rgb - rgb_mean)/rgb_std
+
+        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton, axis=[0, 1, 2, 3], keepdims=True )
+        seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
+
+        seq_depth = seq_depth / 255
 
         # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
         # the same format.
