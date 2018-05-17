@@ -38,9 +38,9 @@ def main(config):
 
 
 
-    # add normalized depth info to the CNN training data
-    training_input_layer = tf.concat([training_placeholders['rgb'], training_placeholders['depth'], training_placeholders['skeleton']],4)
-    validation_input_layer = tf.concat([validation_placeholders['rgb'],validation_placeholders['depth'], validation_placeholders['skeleton']], 4 )
+    # add normalized depth info to the CNN training data, replace rgb with mask_image
+    training_input_layer = tf.concat([training_placeholders['mask'],  training_placeholders['skeleton'],training_placeholders['depth']],4)
+    validation_input_layer = tf.concat([validation_placeholders['mask'], validation_placeholders['skeleton'],validation_placeholders['depth']], 4 )
 
     ##################
     # Training Model

@@ -18,6 +18,20 @@ def get_mean_and_std(tensor, axis, keepdims=False):
 
     return mean, std
 
+
+def applyMask(img, segmentedUser):
+    """
+    Applies mask on the given image for visualization.
+    """
+    if len(img.shape) > 2: # Color image
+        mask3 = segmentedUser > 150
+        masked_img = img * mask3
+    else:
+        mask2 = np.mean(segmentedUser, axis=2) > 150
+        masked_img = img * mask2
+    return masked_img
+
+
 def img_preprocessing_op(image_op):
     """
     Creates preprocessing operations that are going to be applied on a single frame.
@@ -127,8 +141,13 @@ def read_and_decode_sequence(filename_queue, config):
                             )
         seq_skeleton.set_shape([None, 80, 80, 3])
 
-        # for frame_index in range(seq_skeleton.shape[0]):
-        #     seq_skeleton[frame_index]=img_preprocessing_op(seq_skeleton[frame_index])
+        mask_result = tf.py_func(lambda x: x > 150,
+                                   [seq_segmentation],
+                                   tf.bool,
+                                   )
+        mask_result.set_shape([None, 80, 80, 3])
+        # get the human shape mask image, normalized
+        image_extracted = tf.cast(mask_result, tf.float32)* seq_rgb/255
 
 
 
@@ -153,6 +172,7 @@ def read_and_decode_sequence(filename_queue, config):
         sample['skeleton'] = seq_skeleton
         sample['seq_len'] = seq_len
         sample['labels'] = seq_label
+        sample['mask'] = image_extracted
 
         return sample
 
@@ -221,6 +241,13 @@ def read_and_decode_sequence_test_data(filename_queue, config):
                                    tf.float32,
                                    )
         seq_skeleton.set_shape([None, 80, 80, 3] )
+        mask_result = tf.py_func( lambda x: x > 150,
+                                  [seq_segmentation],
+                                  tf.bool,
+                                  )
+        mask_result.set_shape( [None, 80, 80, 3] )
+        # get the human shape mask image, normalized
+        image_extracted = tf.cast( mask_result, tf.float32 ) * seq_rgb / 255
 
         # Normalize RGB images before feeding into the model.
         # TODO
@@ -243,7 +270,7 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         sample['skeleton'] = seq_skeleton
         sample['seq_len'] = seq_len
         sample['ids'] = seq_id
-
+        sample['mask'] = image_extracted
         return sample
 
 
