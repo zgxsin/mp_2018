@@ -33,21 +33,14 @@ def main(config):
                                                config=config['inputs'],
                                                name='validation_input_pipeline',
                                                shuffle=False)
-    ###################
-    # get the skeleton image from data  GX add
-    ##################
-    # skeleton_list = training_placeholders['skeleton'][0][1]
-    # skeleton = Skeleton(skeleton_list)
-    # skeleton.resizePixelCoordinates()
-    # skeleton_img = skeleton.toImage(80, 80)
-    # masked_img = applyMask( img, mask )
+    ###############
 
 
 
 
     # add normalized depth info to the CNN training data
-    training_input_layer = tf.concat([training_placeholders['rgb'], training_placeholders['depth']/255],4)
-    validation_input_layer = tf.concat([validation_placeholders['rgb'],validation_placeholders['depth']/255], 4 )
+    training_input_layer = tf.concat([training_placeholders['rgb'], training_placeholders['depth'], training_placeholders['skeleton']],4)
+    validation_input_layer = tf.concat([validation_placeholders['rgb'],validation_placeholders['depth'], validation_placeholders['skeleton']], 4 )
 
     ##################
     # Training Model
@@ -181,6 +174,12 @@ def main(config):
                                                                         trainModel.loss,
                                                                         train_op],
                                                                        feed_dict={})
+            # visual_skele = session.run([training_placeholders['skeleton']])
+            # visual_rgb = session.run( [training_placeholders['rgb']] )
+            # import matplotlib.pyplot as plt
+            # plt.imshow(visual_skele[0][0])
+            # plt.show()
+
             # Update counters.
             counter_correct_predictions_training += num_correct_predictions
             counter_loss_training += loss
