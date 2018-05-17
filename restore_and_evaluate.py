@@ -27,6 +27,7 @@ def main(config):
     session = tf.Session()
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
     session.run(init_op)
+    visual_skele = session.run( [test_placeholders['skeleton']] )
 
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(sess=session, coord=coord)
@@ -43,8 +44,8 @@ def main(config):
                               placeholders=test_placeholders,
                               mode="inference")
         ### add test skeleton info to the input layer of RNN
-        input2rnn_infer = tf.concat([test_placeholders['skeleton'], inferCnnModel.model_output],2)
-        inferModel.build_graph(input_layer=input2rnn_infer)
+        # input2rnn_infer = tf.concat([test_placeholders['skeleton'], inferCnnModel.model_output],2)
+        inferModel.build_graph(input_layer= inferCnnModel.model_output)
         inferModel.build_loss()
 
     # Restore computation graph.
@@ -53,6 +54,8 @@ def main(config):
     checkpoint_path = config['checkpoint_id']
     if checkpoint_path is None:
         checkpoint_path = tf.train.latest_checkpoint(config['model_dir'])
+        # checkpoint_path = "/Users/zhou/Machine_Perception/mp18-dynamic-gesture-recognition/source_code/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1526236758/model-4290.meta"
+
     else:
         pass
     print("Evaluating " + checkpoint_path)
@@ -61,6 +64,11 @@ def main(config):
     # Evaluation loop
     test_predictions = []
     test_sample_ids = []
+
+    ##############
+    # visual skeleton GX__added
+    #############
+
     try:
         while not coord.should_stop():
             # Get predicted labels and sample ids for submission csv.
@@ -70,6 +78,8 @@ def main(config):
 
     except tf.errors.OutOfRangeError:
         print('Done.')
+
+
     finally:
         # When done, ask the threads to stop.
         coord.request_stop()

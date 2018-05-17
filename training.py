@@ -5,6 +5,7 @@ import json
 import tensorflow as tf
 from model_input import input_pipeline
 from model import CNNModel, RNNModel
+from Skeleton import Skeleton
 
 def main(config):
     # TODO
@@ -32,6 +33,17 @@ def main(config):
                                                config=config['inputs'],
                                                name='validation_input_pipeline',
                                                shuffle=False)
+    ###################
+    # get the skeleton image from data  GX add
+    ##################
+    # skeleton_list = training_placeholders['skeleton'][0][1]
+    # skeleton = Skeleton(skeleton_list)
+    # skeleton.resizePixelCoordinates()
+    # skeleton_img = skeleton.toImage(80, 80)
+    # masked_img = applyMask( img, mask )
+
+
+
 
     # add normalized depth info to the CNN training data
     training_input_layer = tf.concat([training_placeholders['rgb'], training_placeholders['depth']/255],4)
@@ -53,8 +65,8 @@ def main(config):
                               placeholders=training_placeholders,
                               mode="training")
         ### add training skeleton info to the input layer of RNN
-        input2rnn = tf.concat([training_placeholders['skeleton'], cnnModel.model_output], 2)
-        trainModel.build_graph(input_layer=input2rnn)
+        # input2rnn = tf.concat([training_placeholders['skeleton'], cnnModel.model_output], 2)
+        trainModel.build_graph(input_layer=cnnModel.model_output)
         trainModel.build_loss()
 
         print("\n# of parameters: %s"%trainModel.get_num_parameters())
@@ -91,8 +103,8 @@ def main(config):
                               placeholders=validation_placeholders,
                               mode="validation")
         ### add training skeleton info to the input layer of RNN
-        input2rnn_val = tf.concat([validation_placeholders['skeleton'], validCnnModel.model_output],2)
-        validModel.build_graph(input_layer=input2rnn_val)
+        # input2rnn_val = tf.concat([validation_placeholders['skeleton'], validCnnModel.model_output],2)
+        validModel.build_graph(input_layer=validCnnModel.model_output)
         validModel.build_loss()
 
     ##############
@@ -118,6 +130,8 @@ def main(config):
     # Create session object
     gpu_options = tf.GPUOptions(allow_growth=True)
     session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True))
+
+
 
     # Add the ops to initialize variables.
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
