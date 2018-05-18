@@ -5,7 +5,12 @@ import json
 import tensorflow as tf
 from model_input import input_pipeline
 from model import CNNModel, RNNModel
+
 from Skeleton import Skeleton
+
+
+
+
 
 def main(config):
     # TODO
@@ -61,6 +66,8 @@ def main(config):
         # input2rnn = tf.concat([training_placeholders['skeleton'], cnnModel.model_output], 2)
         trainModel.build_graph(input_layer=cnnModel.model_output)
         trainModel.build_loss()
+        # apply moving average
+        ema_op = trainModel.ema.apply(tf.trainable_variables())
 
         print("\n# of parameters: %s"%trainModel.get_num_parameters())
 
@@ -80,8 +87,11 @@ def main(config):
             raise Exception("Invalid learning rate type")
 
         optimizer = tf.train.AdamOptimizer(learning_rate)
-        train_op = optimizer.minimize(trainModel.loss, global_step=global_step)
+        train_op1 = optimizer.minimize(trainModel.loss, global_step=global_step)
 
+
+        with tf.control_dependencies([train_op1, ema_op]):
+            train_op = tf.no_op(name="train_ema")
     ###################
     # Validation Model
     ###################
