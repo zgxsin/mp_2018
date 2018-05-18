@@ -66,8 +66,8 @@ def main(config):
         # input2rnn = tf.concat([training_placeholders['skeleton'], cnnModel.model_output], 2)
         trainModel.build_graph(input_layer=cnnModel.model_output)
         trainModel.build_loss()
-        # apply moving average
-        ema_op = trainModel.ema.apply(tf.trainable_variables())
+
+
 
         print("\n# of parameters: %s"%trainModel.get_num_parameters())
 
@@ -75,6 +75,10 @@ def main(config):
         # Optimization
         ##############
         global_step = tf.Variable(1, name='global_step', trainable=False)
+        # apply moving average
+        ema = tf.train.ExponentialMovingAverage( 0.998, global_step )
+        ema_op = ema.apply(tf.trainable_variables())
+
         if config['learning_rate_type'] == 'exponential':
             learning_rate = tf.train.exponential_decay(config['learning_rate'],
                                                        global_step=global_step,

@@ -27,7 +27,7 @@ class Model():
         self.is_training = self.mode == "training"
         self.reuse = self.mode == "validation"
         # self.regularizer = tf.contrib.layers.l1_regularizer(self.config['regularization_rate'] )
-        self.ema = tf.train.ExponentialMovingAverage(0.998)
+        # self.ema = tf.train.ExponentialMovingAverage(0.998)
 
         self.input_seq_len = placeholders['seq_len']
         if self.mode is not "inference":
@@ -53,10 +53,10 @@ class Model():
         #self.initializer = tf.contrib.layers.xavier_initializer()
         self.initializer = tf.glorot_normal_initializer()
 
-    def ema_getter(self, getter, name, *args, **kwargs):
-        var = getter(name, *args, **kwargs )
-        ema_var = self.ema.average( var)
-        return ema_var if ema_var else var
+    # def ema_getter(self, getter, name, *args, **kwargs):
+    #     var = getter(name, *args, **kwargs )
+    #     ema_var = self.ema.average( var)
+    #     return ema_var if ema_var else var
 
     def build_graph(self, input_layer=None):
         """
@@ -83,7 +83,7 @@ class Model():
         """
         #
         # Calculate logits
-        with tf.variable_scope('logits', reuse=self.reuse, initializer=self.initializer, regularizer=None, custom_getter =self.ema_getter):
+        with tf.variable_scope('logits', reuse=self.reuse, initializer=self.initializer, regularizer=None):
             dropout_layer = tf.layers.dropout(inputs=self.model_output_flat, rate=self.config['dropout_rate'], training=self.is_training)
             logits_non_temporal = tf.layers.dense(inputs=dropout_layer, units=self.config['num_class_labels'])
             self.logits = tf.reshape(logits_non_temporal, [self.config['batch_size'], -1, self.config['num_class_labels']])
@@ -166,10 +166,9 @@ class CNNModel(Model):
         Stacks convolutional layers where each layer consists of CNN+Pooling operations.
         """
         # regularizer_cnn = tf.contrib.layers.l1_regularizer(self.config['regularization_rate'])
-        with tf.variable_scope("convolution", reuse=self.reuse, initializer=self.initializer, regularizer=None, custom_getter = super().ema_getter):
-            input_layer_ = self.input_layer
+        with tf.variable_scope("convolution", reuse=self.reuse, initializer=self.initializer, regularizer=None):
             for i, num_filter in enumerate(self.config['num_filters']):
-                conv_layer = tf.layers.conv2d(inputs=input_layer_,
+                conv_layer = tf.layers.conv2d(inputs=self.input_layer,
                                               filters=num_filter,
                                               kernel_size=[self.config['filter_size'][i], self.config['filter_size'][i]],
                                               padding="same",
@@ -182,7 +181,7 @@ class CNNModel(Model):
             self.model_output_raw = input_layer_
 
     def build_graph(self, input_layer=None):
-        with tf.variable_scope("cnn_model", reuse=self.reuse, initializer=self.initializer, regularizer=None, custom_getter= super().ema_getter):
+        with tf.variable_scope("cnn_model", reuse=self.reuse, initializer=self.initializer, regularizer=None):
             if input_layer is None:
                 # Here we use RGB modality only.
                 # TODO_GX: need some operations here
@@ -226,7 +225,7 @@ class RNNModel(Model):
         """
 
         # regularizer_rnn = tf.contrib.layers.l1_regularizer( self.config['regularization_rate'] )
-        with tf.variable_scope("recurrent", reuse=self.reuse, initializer=self.initializer, regularizer = None, custom_getter=super().ema_getter):
+        with tf.variable_scope("recurrent", reuse=self.reuse, initializer=self.initializer, regularizer = None):
             rnn_cells = []
             for i in range(self.config['num_layers']):
                 rnn_cells.append(tf.nn.rnn_cell.LSTMCell(num_units=self.config['num_hidden_units']))
@@ -245,7 +244,7 @@ class RNNModel(Model):
                                                                       swap_memory=True)
 
     def build_graph(self, input_layer=None):
-        with tf.variable_scope("rnn_model", reuse=self.reuse, initializer=self.initializer, regularizer= None, custom_getter=super().ema_getter):
+        with tf.variable_scope("rnn_model", reuse=self.reuse, initializer=self.initializer, regularizer= None):
             if input_layer is None:
                 # TODO you can feed any image modality if you wish. You need to flatten images such that a mini-batch has shape [batch_size, seq_len, height*width*num_channels].
                 raise Exception("Inputs are missing.")
