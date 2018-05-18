@@ -21,6 +21,7 @@ class Model():
         self.mode = mode
         self.is_training = self.mode == "training"
         self.reuse = self.mode == "validation"
+        self.regularizer = tf.contrib.layers.l1_regularizer(self.config['regularization_rate'] )
 
         self.input_seq_len = placeholders['seq_len']
         if self.mode is not "inference":
@@ -95,15 +96,19 @@ class Model():
 
         if self.mode is not "inference":
             with tf.name_scope("cross_entropy_loss"):
+
+                self.reg_loss = self.config['regularization_rate']*tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()
+                                                         if 'bias' not in v.name])
+
                 if self.config['loss_type'] == 'average_loss':
                     labels_all_steps = tf.tile(tf.expand_dims(self.input_target_labels, dim=1), [1, tf.reduce_max(self.input_seq_len)])
                     self.loss = tf.contrib.seq2seq.sequence_loss(logits=self.logits,
                                                                  targets=labels_all_steps,
                                                                  weights=self.seq_loss_mask[:, :, 0],
                                                                  average_across_timesteps=True,
-                                                                 average_across_batch=True)
+                                                                 average_across_batch=True) + self.reg_loss
                 else:
-                    self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits, labels=self.input_target_labels))
+                    self.loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits, labels=self.input_target_labels)) + self.reg_loss
 
             with tf.name_scope("accuracy_stats"):
                 # Return a bool tensor with shape [batch_size] that is true for the correct predictions.
@@ -149,6 +154,7 @@ class CNNModel(Model):
         """
         Stacks convolutional layers where each layer consists of CNN+Pooling operations.
         """
+        # regularizer_cnn = tf.contrib.layers.l1_regularizer(self.config['regularization_rate'])
         with tf.variable_scope("convolution", reuse=self.reuse, initializer=self.initializer, regularizer=None):
             input_layer_ = self.input_layer
             for i, num_filter in enumerate(self.config['num_filters']):
@@ -156,6 +162,7 @@ class CNNModel(Model):
                                               filters=num_filter,
                                               kernel_size=[self.config['filter_size'][i], self.config['filter_size'][i]],
                                               padding="same",
+                                              # kernel_regularizer = self.regularizer,
                                               activation=tf.nn.relu)
 
                 pooling_layer = tf.layers.max_pooling2d(inputs=conv_layer, pool_size=[2, 2], strides=2, padding='same')
@@ -206,7 +213,9 @@ class RNNModel(Model):
         """
         Creates LSTM cell(s) and recurrent model.
         """
-        with tf.variable_scope("recurrent", reuse=self.reuse, initializer=self.initializer, regularizer=None):
+
+        # regularizer_rnn = tf.contrib.layers.l1_regularizer( self.config['regularization_rate'] )
+        with tf.variable_scope("recurrent", reuse=self.reuse, initializer=self.initializer, regularizer = None):
             rnn_cells = []
             for i in range(self.config['num_layers']):
                 rnn_cells.append(tf.nn.rnn_cell.LSTMCell(num_units=self.config['num_hidden_units']))
@@ -225,7 +234,7 @@ class RNNModel(Model):
                                                                       swap_memory=True)
 
     def build_graph(self, input_layer=None):
-        with tf.variable_scope("rnn_model", reuse=self.reuse, initializer=self.initializer, regularizer=None):
+        with tf.variable_scope("rnn_model", reuse=self.reuse, initializer=self.initializer, regularizer= None):
             if input_layer is None:
                 # TODO you can feed any image modality if you wish. You need to flatten images such that a mini-batch has shape [batch_size, seq_len, height*width*num_channels].
                 raise Exception("Inputs are missing.")
