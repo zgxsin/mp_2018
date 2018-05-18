@@ -108,3 +108,5 @@ if __name__ == '__main__':
         config['checkpoint_id'] = None # The latest checkpoint will be used.
 
     main(config)
+
+    # python3 restore_and_evaluate.py -M "lstm1_512_cnn5_drop3_5e4_avg_logit_1526593371" -C "1245"
