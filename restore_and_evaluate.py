@@ -49,9 +49,11 @@ def main(config):
         inferModel.build_loss()
 
     # Restore computation graph.
-    vairables_average = tf.train.ExponentialMovingAverage(0.998)
-    vairables_to_restore = vairables_average.variables_to_restore()
-    saver = tf.train.Saver(vairables_to_restore, save_relative_paths=True )
+    # vairables_average = tf.train.ExponentialMovingAverage(0.998)
+    # vairables_to_restore = vairables_average.variables_to_restore()
+    # saver = tf.train.Saver(vairables_to_restore, save_relative_paths=True )
+
+    saver = tf.train.Saver(save_relative_paths=True )
     # Restore variables.
     checkpoint_path = config['checkpoint_id']
     if checkpoint_path is None:

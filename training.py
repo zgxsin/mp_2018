@@ -67,8 +67,6 @@ def main(config):
         trainModel.build_graph(input_layer=cnnModel.model_output)
         trainModel.build_loss()
 
-
-
         print("\n# of parameters: %s"%trainModel.get_num_parameters())
 
         ##############
@@ -76,7 +74,7 @@ def main(config):
         ##############
         global_step = tf.Variable(1, name='global_step', trainable=False)
         # apply moving average
-        ema = tf.train.ExponentialMovingAverage( 0.998, global_step )
+        ema = tf.train.ExponentialMovingAverage(0.998, global_step)
         ema_op = ema.apply(tf.trainable_variables())
 
         if config['learning_rate_type'] == 'exponential':

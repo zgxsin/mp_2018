@@ -13,6 +13,10 @@ config['tmp_dir'] = './tmp/'
 config['train_data_dir'] = "../train/"
 config['valid_data_dir'] = "../validation/"
 config['test_data_dir'] = "../test/"
+
+# config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
+# config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
+# config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
 ##################################################################
 # You can modify the rest or add new fields as you need.
 
@@ -23,7 +27,7 @@ config['num_training_samples'] = 5722
 
 # Hyper-parameters and training configuration.
 # config['batch_size'] = 16
-config['batch_size'] = 20   ## modified by GX
+config['batch_size'] = 30   ## modified by GX
 config['learning_rate'] = 5e-4
 # Learning rate is annealed exponentially in 'exponential' case. Don't forget to change annealing configuration in the code.
 config['learning_rate_type'] = 'exponential' #'fixed' or 'exponential'
@@ -59,14 +63,15 @@ config['inputs']['skeleton_size'] = 180
 config['cnn'] = {}
 config['cnn']['num_filters'] = [16,32,64,128,256] # Number of filters for every convolutional layer.
 config['cnn']['filter_size'] = [3,3,3,3,3,3] # Kernel size. Assuming kxk kernels.
-config['cnn']['num_hidden_units'] = 512 # Number of units in the last dense layer, i.e. representation size.
-# config['cnn']['dropout_rate'] = 0.3
-config['cnn']['dropout_rate'] = 0.4 ## modified by GX
+# config['cnn']['num_hidden_units'] = 512 # Number of units in the last dense layer, i.e. representation size.
+config['cnn']['num_hidden_units'] = 400
+config['cnn']['dropout_rate'] = 0.3
+# config['cnn']['dropout_rate'] = 0. ## modified by GX
 config['cnn']['num_class_labels'] = 20
 config['cnn']['batch_size'] = config['batch_size']
 config['cnn']['loss_type'] = config['loss_type']
 config['cnn']['regularization_rate'] = 0.0001 # this is the rate for L2 or L1 regularizer
-config['cnn']['moving_average_decay'] = 0.99 # moving_average_rate
+config['cnn']['moving_average_decay'] = 0.998 # moving_average_rate
 
 # RNN model parameters
 config['rnn'] = {}

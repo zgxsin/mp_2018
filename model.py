@@ -167,15 +167,36 @@ class CNNModel(Model):
         """
         # regularizer_cnn = tf.contrib.layers.l1_regularizer(self.config['regularization_rate'])
         with tf.variable_scope("convolution", reuse=self.reuse, initializer=self.initializer, regularizer=None):
+            input_layer_ = self.input_layer
             for i, num_filter in enumerate(self.config['num_filters']):
-                conv_layer = tf.layers.conv2d(inputs=self.input_layer,
-                                              filters=num_filter,
-                                              kernel_size=[self.config['filter_size'][i], self.config['filter_size'][i]],
-                                              padding="same",
-                                              # kernel_regularizer = self.regularizer,
-                                              activation=tf.nn.relu)
 
-                pooling_layer = tf.layers.max_pooling2d(inputs=conv_layer, pool_size=[2, 2], strides=2, padding='same')
+                conv_layer=  tf.layers.conv3d(
+                            inputs = input_layer_,
+                            filters = num_filter,
+                            kernel_size = [self.config['filter_size'][i]+6, self.config['filter_size'][i], self.config['filter_size'][i]],
+                            strides=(1, 1, 1),
+                            padding='same',
+                            # data_format='channels_last',
+                            # dilation_rate=(1, 1, 1),
+                            activation=tf.nn.relu,
+                )
+                # conv_layer = tf.layers.conv2d(inputs=input_layer_,
+                #                               filters=num_filter,
+                #                               kernel_size=[self.config['filter_size'][i], self.config['filter_size'][i]],
+                #                               padding="same",
+                #                               # kernel_regularizer = self.regularizer,
+                #                               activation=tf.nn.relu)
+
+                # tf.layers.max_pooling3d(
+                #     inputs,
+                #     pool_size,
+                #     strides,
+                #     padding='valid',
+                #     data_format='channels_last',
+                #     name=None
+                # )
+                # TODO: i don't know
+                pooling_layer = tf.layers.max_pooling3d(inputs=conv_layer, pool_size=[2, 2, 2], strides=[1,2,2], padding='same')
                 input_layer_ = pooling_layer
 
             self.model_output_raw = input_layer_
@@ -194,12 +215,12 @@ class CNNModel(Model):
             # frame is regarded as a separate sample. We transform [batch_size, seq_len, height, width, num_channels] to
             # [batch_size*seq_len, height, width, num_channels]
             batch_size, seq_len, height, width, num_channels = self.input_layer.shape
-            non_temporal_input_dims = [-1, height, width, num_channels]
-            self.input_layer = tf.reshape(self.input_layer, non_temporal_input_dims)
+            # non_temporal_input_dims = [-1, height, width, num_channels]
+            # self.input_layer = tf.reshape(self.input_layer, non_temporal_input_dims)
             self.build_network()
 
             # Shape of [batch_size*seq_len, cnn_height, cnn_width, num_filters]
-            batch_seq, cnn_height, cnn_width, num_filters = self.model_output_raw.shape.as_list()
+            batchsize, batch_seq, cnn_height, cnn_width, num_filters = self.model_output_raw.shape.as_list()
             self.model_output_flat = tf.reshape(self.model_output_raw, [-1, cnn_height*cnn_width*num_filters])
 
             # Stack a dense layer to set CNN representation size.
