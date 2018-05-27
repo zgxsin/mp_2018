@@ -27,7 +27,7 @@ config['num_training_samples'] = 5722
 
 # Hyper-parameters and training configuration.
 # config['batch_size'] = 16
-config['batch_size'] = 30   ## modified by GX
+config['batch_size'] = 16   ## modified by GX
 config['learning_rate'] = 5e-4
 # Learning rate is annealed exponentially in 'exponential' case. Don't forget to change annealing configuration in the code.
 config['learning_rate_type'] = 'exponential' #'fixed' or 'exponential'
