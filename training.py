@@ -52,31 +52,30 @@ def main(config):
     ##################
     # Create separate graphs for training and validation.
     # Training graph.
+    global_step = tf.Variable(1, name='global_step', trainable=False )
+    # apply moving average
+    ema = tf.train.ExponentialMovingAverage(0.998, global_step )
     with tf.name_scope("Training"):
         # Create model
         cnnModel = CNNModel(config=config['cnn'],
                             placeholders=training_placeholders,
-                            mode='training')
+                            mode='training',ema= ema)
         cnnModel.build_graph(input_layer=training_input_layer)
 
         trainModel = RNNModel(config=config['rnn'],
                               placeholders=training_placeholders,
-                              mode="training")
+                              mode="training", ema = ema)
         ### add training skeleton info to the input layer of RNN
         # input2rnn = tf.concat([training_placeholders['skeleton'], cnnModel.model_output], 2)
         trainModel.build_graph(input_layer=cnnModel.model_output)
         trainModel.build_loss()
-
+        # apply moving average
+        ema_op = ema.apply(tf.trainable_variables())
         print("\n# of parameters: %s"%trainModel.get_num_parameters())
 
         ##############
         # Optimization
         ##############
-        global_step = tf.Variable(1, name='global_step', trainable=False)
-        # apply moving average
-        ema = tf.train.ExponentialMovingAverage(0.998, global_step)
-        ema_op = ema.apply(tf.trainable_variables())
-
         if config['learning_rate_type'] == 'exponential':
             learning_rate = tf.train.exponential_decay(config['learning_rate'],
                                                        global_step=global_step,
@@ -101,12 +100,12 @@ def main(config):
         # Create model
         validCnnModel = CNNModel(config=config['cnn'],
                             placeholders=validation_placeholders,
-                            mode='validation')
+                            mode='validation', ema=ema)
         validCnnModel.build_graph(input_layer=validation_input_layer)
 
         validModel = RNNModel(config=config['rnn'],
                               placeholders=validation_placeholders,
-                              mode="validation")
+                              mode="validation", ema=ema)
         ### add training skeleton info to the input layer of RNN
         # input2rnn_val = tf.concat([validation_placeholders['skeleton'], validCnnModel.model_output],2)
         validModel.build_graph(input_layer=validCnnModel.model_output)
@@ -136,6 +135,36 @@ def main(config):
     gpu_options = tf.GPUOptions(allow_growth=True)
     session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True))
 
+
+    ##############################
+    # Restoring and Initialization  DaiQi_add
+    ##############################
+
+    # Load Previous Model and initialize weights
+    # restored_variables = tf.trainable_variables()
+    # restore_saver = tf.train.Saver(var_list=restored_variables )
+    # # latest_checkpoint(checkpoint_dir, latest_filename=None)
+    # # checkpoint_path = tf.train.latest_checkpoint("~/Workspace/Data/zgxsin_data/source_code/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1526236758 ")
+    # checkpoint_path = tf.train.latest_checkpoint(
+    #     " /Users/zhou/MP2018_Edit/mp18-dynamic-gesture-recognition/source_code/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1526652032")
+    # print('Restoring from ', checkpoint_path)
+    # restore_saver.restore(session, checkpoint_path )
+    #
+    # # Initialize remaining uninitialized variables
+    # all_variables = tf.global_variables() + tf.local_variables()
+    # initialized_list = []
+    # for varIdx in range(len(all_variables)):
+    #     variable = all_variables[varIdx]
+    #     varFlag = session.run(tf.is_variable_initialized(variable))
+    #     if not varFlag:
+    #         initialized_list.append(variable )
+    #
+    # init_op = tf.variables_initializer(initialized_list, name='init_remaining' )
+    # session.run(init_op)
+
+    ##############################
+    # Restoring and Initialization  DaiQi_add
+    ##############################
 
 
     # Add the ops to initialize variables.
@@ -262,7 +291,7 @@ def main(config):
     tf.reset_default_graph()
     from restore_and_evaluate import main as evaluate
     config['checkpoint_id'] = None
-    evaluate(config)
+    evaluate(config, ema)
 
 
 if __name__ == '__main__':

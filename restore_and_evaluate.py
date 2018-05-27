@@ -7,7 +7,7 @@ from model_input import  input_pipeline
 from model import CNNModel, RNNModel
 from utils import createSubmissionFile
 
-def main(config):
+def main(config, ema):
     config['batch_size'] = 2 # Divisor of number of test samples. Don't change it.
     config['rnn']['batch_size'] = 2
     config['cnn']['batch_size'] = 2
@@ -49,11 +49,11 @@ def main(config):
         inferModel.build_loss()
 
     # Restore computation graph.
-    # vairables_average = tf.train.ExponentialMovingAverage(0.998)
-    # vairables_to_restore = vairables_average.variables_to_restore()
-    # saver = tf.train.Saver(vairables_to_restore, save_relative_paths=True )
 
-    saver = tf.train.Saver(save_relative_paths=True )
+    vairables_to_restore = ema.variables_to_restore()
+    saver = tf.train.Saver(vairables_to_restore, save_relative_paths=True )
+
+    # saver = tf.train.Saver(save_relative_paths=True )
     # Restore variables.
     checkpoint_path = config['checkpoint_id']
     if checkpoint_path is None:
@@ -111,6 +111,7 @@ if __name__ == '__main__':
         config['checkpoint_id'] = os.path.join(experiment_dir, 'model-' + str(args.checkpoint_id))
     else:
         config['checkpoint_id'] = None # The latest checkpoint will be used.
+
 
     main(config)
 
