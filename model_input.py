@@ -73,7 +73,7 @@ def img_preprocessing_op(image_op):
             skeleton = Skeleton(image_op[i])
             skeleton.resizePixelCoordinates()
             image_op_[i] = skeleton.toImage(80, 80)
-
+        # return skeletonimage [0,255]
         return image_op_.astype(np.float32)
 
 def read_and_decode_sequence(filename_queue, config):
@@ -135,6 +135,7 @@ def read_and_decode_sequence(filename_queue, config):
         # skeleton_dim = 80*80*3*tf.shape(seq_skeleton)[0]
         # [tf.float32]*skeleton_dim.
 
+        # seq_skeleton [0,255]
         seq_skeleton = tf.py_func(lambda x:img_preprocessing_op(x),
                            [seq_skeleton],
                             tf.float32,
@@ -144,10 +145,13 @@ def read_and_decode_sequence(filename_queue, config):
         mask_result = tf.py_func(lambda x: x > 150,
                                    [seq_segmentation],
                                    tf.bool,
-                                   )
+                                     )
+
         mask_result.set_shape([None, 80, 80, 3])
         # get the human shape mask image, normalized
-        image_extracted = tf.cast(mask_result, tf.float32)* seq_rgb/255
+
+        # mage_extracted [0,255]
+        image_extracted = tf.cast(mask_result, tf.float32)* seq_rgb
 
 
 
@@ -159,10 +163,14 @@ def read_and_decode_sequence(filename_queue, config):
         rgb_mean, rgb_std = get_mean_and_std(seq_rgb, axis=[0, 1, 2, 3], keepdims=True)
         seq_rgb = (seq_rgb - rgb_mean)/rgb_std
 
+        image_extracted_mean, image_extracted_std = get_mean_and_std(image_extracted, axis=[0, 1, 2, 3], keepdims=True )
+        image_extracted = (image_extracted - image_extracted_mean) /image_extracted_std
+
         skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton, axis=[0, 1, 2, 3], keepdims=True )
         seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
 
-        seq_depth = seq_depth/255
+        # normalize tp [-1,1]
+        seq_depth = (seq_depth - 128)/128
         # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
         # the same format.
         sample = {}

@@ -54,8 +54,10 @@ class Model():
         self.initializer = tf.glorot_normal_initializer()
 
     def ema_getter(self, getter, name, *args, **kwargs):
-        var = getter(name, *args, **kwargs )
-        ema_var = self.ema.average(var)
+        var = getter(name, *args, **kwargs)
+        ema_var = None
+        if (self.ema):
+            ema_var = self.ema.average(var)
         return ema_var if ema_var else var
 
     def build_graph(self, input_layer=None):

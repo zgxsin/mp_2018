@@ -54,7 +54,7 @@ def main(config):
     # Training graph.
     global_step = tf.Variable(1, name='global_step', trainable=False )
     # apply moving average
-    ema = tf.train.ExponentialMovingAverage(0.998, global_step )
+    ema = tf.train.ExponentialMovingAverage(0.998, global_step)
     with tf.name_scope("Training"):
         # Create model
         cnnModel = CNNModel(config=config['cnn'],
@@ -179,7 +179,10 @@ def main(config):
     valid_summary_writer = tf.summary.FileWriter(valid_summary_dir, session.graph)
 
     # Create a saver for saving checkpoints.
-    saver = tf.train.Saver(var_list=tf.trainable_variables(), max_to_keep=3, save_relative_paths=True)
+    # save EMA variables and other variables
+    restore_variables = tf.trainable_variables() \
+                        + tf.moving_average_variables()
+    saver = tf.train.Saver(var_list=restore_variables, max_to_keep=3, save_relative_paths=True)
 
     # Define counters in order to accumulate measurements.
     counter_correct_predictions_training = 0.0
@@ -291,7 +294,7 @@ def main(config):
     tf.reset_default_graph()
     from restore_and_evaluate import main as evaluate
     config['checkpoint_id'] = None
-    evaluate(config, ema)
+    evaluate(config)
 
 
 if __name__ == '__main__':
