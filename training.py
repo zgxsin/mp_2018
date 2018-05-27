@@ -182,8 +182,9 @@ def main(config):
     # save EMA variables and other variables
     restore_variables = tf.trainable_variables() \
                         + tf.moving_average_variables()
-    saver = tf.train.Saver(var_list=restore_variables, max_to_keep=3, save_relative_paths=True)
-
+    # saver = tf.train.Saver(var_list=tf.trainable_variables(), max_to_keep=3, save_relative_paths=True)
+    # save all the variables
+    saver = tf.train.Saver(max_to_keep=3, save_relative_paths=True )
     # Define counters in order to accumulate measurements.
     counter_correct_predictions_training = 0.0
     counter_loss_training = 0.0
