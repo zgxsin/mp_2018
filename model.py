@@ -247,11 +247,12 @@ class CNNModel(Model):
 
             # for 2D CNN
             # batchsize,  cnn_height, cnn_width, num_filters = self.model_output_raw.shape.as_list()
-            # self.model_output_flat = tf.reshape(self.model_output_raw, [-1, cnn_height*cnn_width*num_filters])
+
 
             # Stack a dense layer to set CNN representation size.
             # Densely connected layer with <num_hidden_units> output neurons.
             # Output Tensor Shape: [batch_size, num_hidden_units]
+            self.model_output_flat = tf.reshape(self.model_output_raw, [-1, cnn_height * cnn_width * num_filters] )
             self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=self.config['num_hidden_units'], activation=tf.nn.relu)
             self.model_output = tf.reshape(self.model_output_flat, [batch_size, -1, self.config['num_hidden_units']])
 
