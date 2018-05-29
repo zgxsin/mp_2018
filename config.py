@@ -36,8 +36,8 @@ config['num_steps_per_epoch'] = int(config['num_training_samples']/config['batch
 
 config['num_epochs'] = 25
 # config['num_epochs'] = 50 ## modified by GX
-config['evaluate_every_step'] = config['num_steps_per_epoch']*2
-config['checkpoint_every_step'] = config['num_steps_per_epoch']*5
+config['evaluate_every_step'] = config['num_steps_per_epoch']*2 # every two epoch, evaluate the model performance
+config['checkpoint_every_step'] = config['num_steps_per_epoch']*5 # every 5 epoch save the model
 config['num_validation_steps'] = int(config['num_validation_samples']/config['batch_size'])
 config['print_every_step'] = 50
 
@@ -63,20 +63,20 @@ config['inputs']['skeleton_size'] = 180
 config['cnn'] = {}
 config['cnn']['num_filters'] = [16,32,64,128,256] # Number of filters for every convolutional layer.
 config['cnn']['filter_size'] = [3,3,3,3,3,3] # Kernel size. Assuming kxk kernels.
-# config['cnn']['num_hidden_units'] = 512 # Number of units in the last dense layer, i.e. representation size.
-config['cnn']['num_hidden_units'] = 400
+config['cnn']['num_hidden_units'] = 512 # Number of units in the last dense layer, i.e. representation size.
+# config['cnn']['num_hidden_units'] = 400
 config['cnn']['dropout_rate'] = 0.3
 # config['cnn']['dropout_rate'] = 0. ## modified by GX
 config['cnn']['num_class_labels'] = 20
 config['cnn']['batch_size'] = config['batch_size']
 config['cnn']['loss_type'] = config['loss_type']
 config['cnn']['regularization_rate'] = 0.0001 # this is the rate for L2 or L1 regularizer
-config['cnn']['moving_average_decay'] = 0.998 # moving_average_rate
+config['cnn']['moving_average_decay'] = 0.998 # moving_average_rate todo: just highlight
 
 # RNN model parameters
 config['rnn'] = {}
-# config['rnn']['num_hidden_units'] = 512 # Number of units in an LSTM cell.
-config['rnn']['num_hidden_units'] = 512 # GX add
+config['rnn']['num_hidden_units'] = 512 # Number of units in an LSTM cell.
+# config['rnn']['num_hidden_units'] = 512 # GX add
 # config['rnn']['dropout_rate'] = 0.3
 config['rnn']['dropout_rate'] = 0.4 ## GX add
 config['rnn']['num_layers'] = 1 # Number of LSTM stack.

@@ -32,7 +32,7 @@ class Model():
         self.input_seq_len = placeholders['seq_len']
         if self.mode is not "inference":
             self.input_target_labels = placeholders['labels']
-
+        # todo:?
         self.seq_loss_mask = tf.expand_dims(tf.sequence_mask(lengths=self.input_seq_len, dtype=tf.float32), -1)
 
         # Total number of trainable parameters.

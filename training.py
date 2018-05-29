@@ -8,7 +8,7 @@ from model import CNNModel, RNNModel
 
 from Skeleton import Skeleton
 
-
+## command line: bsub -n 10 -N -o job.out3dcnn_load_model -W 2440 -R "rusage[mem=15098,scratch=4096,ngpus_excl_p=4]" python training_load_model.py
 
 
 
@@ -180,11 +180,13 @@ def main(config):
 
     # Create a saver for saving checkpoints.
     # save EMA variables and other variables
-    restore_variables = tf.trainable_variables() \
-                        + tf.moving_average_variables()
+    # restore_variables = tf.trainable_variables() \
+    #                     + tf.moving_average_variables()
     # saver = tf.train.Saver(var_list=tf.trainable_variables(), max_to_keep=3, save_relative_paths=True)
+
     # save all the variables
-    saver = tf.train.Saver(max_to_keep=3, save_relative_paths=True )
+    # keep 10 checkpoints
+    saver = tf.train.Saver(max_to_keep=10, save_relative_paths=True )
     # Define counters in order to accumulate measurements.
     counter_correct_predictions_training = 0.0
     counter_loss_training = 0.0

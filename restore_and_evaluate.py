@@ -8,7 +8,7 @@ from model import CNNModel, RNNModel
 from utils import createSubmissionFile
 
 def main(config):
-    config['batch_size'] = 2 # Divisor of number of test samples. Don't change it.
+    config['batch_size'] = 2 # Divisor of number of test samples. Don't change it. todo:?
     config['rnn']['batch_size'] = 2
     config['cnn']['batch_size'] = 2
     config['inputs']['batch_size'] = 2
@@ -22,7 +22,7 @@ def main(config):
                                        mode="inference")
 
     # test_input_layer = test_placeholders['rgb']
-    test_input_layer = tf.concat([test_placeholders['mask'], test_placeholders['skeleton'], test_placeholders['depth']], 4 )
+    test_input_layer = tf.concat([test_placeholders['mask'], test_placeholders['skeleton'], test_placeholders['depth']], 4)
 
     session = tf.Session()
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -57,12 +57,13 @@ def main(config):
 
     ema = tf.train.ExponentialMovingAverage(0.998)
     vairables_to_restore = ema.variables_to_restore()
-    saver = tf.train.Saver(vairables_to_restore, save_relative_paths=True )
+    saver = tf.train.Saver(vairables_to_restore, save_relative_paths=True)
 
     # saver = tf.train.Saver(save_relative_paths=True )
 
     checkpoint_path = config['checkpoint_id']
     if checkpoint_path is None:
+        # todo: we can change this to another model
         checkpoint_path = tf.train.latest_checkpoint(config['model_dir'])
         # checkpoint_path = "/Users/zhou/Machine_Perception/mp18-dynamic-gesture-recognition/source_code/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1526236758/model-4290.meta"
 
@@ -120,4 +121,4 @@ if __name__ == '__main__':
 
     main(config)
 
-    # python3 restore_and_evaluate.py -M "lstm1_512_cnn5_drop3_5e4_avg_logit_1526593371" -C "1245"
+    # python3 restore_and_evaluate.py -M "lstm1_512_cnn5_drop3_5e4_avg_logit_1527443055" -C "16065"
