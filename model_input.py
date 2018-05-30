@@ -234,7 +234,7 @@ def read_and_decode_sequence(filename_queue, config):
                                      dtype=tf.float32,
                                      back_prop=False
                                      )
-        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton[:,12:68,20:60,:], axis=[0, 1, 2, 3], keepdims=True )
+        skeleton_mean, skeleton_std = get_mean_and_std(seq_skeleton[:,12:68,20:60,:], axis=[0, 1, 2, 3], keepdims=True )
         seq_skeleton = (seq_skeleton[:,12:68,20:60,:] - skeleton_mean) / skeleton_std
 
         seq_skeleton= tf.map_fn( lambda x: img_preprocessing_op_map( x ),

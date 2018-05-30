@@ -33,7 +33,7 @@ class Model():
         if self.mode is not "inference":
             self.input_target_labels = placeholders['labels']
         # todo:?
-        self.input_clip_len = (self.input_seq_len - 15)/8
+        self.input_clip_len = tf.to_int32(((self.input_seq_len - 15)/8))
         self.seq_loss_mask = tf.expand_dims(tf.sequence_mask(lengths=self.input_clip_len, dtype=tf.float32), -1)
 
         # Total number of trainable parameters.
@@ -94,7 +94,7 @@ class Model():
 
         with tf.variable_scope('logits_prediction', reuse=self.reuse, initializer=self.initializer, regularizer=None):
             if self.config['loss_type'] == 'last_logit': # Select the last step. Note that we have variable-length and padded sequences.
-                self.logits = tf.gather_nd(self.logits, tf.stack([tf.range(self.config['batch_size']), self.input_clip_len - 1], axis=1))
+                self.logits = tf.gather_nd(self.logits, tf.stack([tf.range(self.config['batch_size']), self.input_clip_len-1], axis=1))
                 self.accuracy_logit = self.logits
             elif self.config['loss_type'] == 'average_logit': # Take average of time steps.
                 # shape of the self.seq_loss_mask is [batch_size, seq_len, 1 ]
@@ -215,7 +215,7 @@ class CNNModel(Model):
 
             conv1 =tf.layers.conv3d(
                             inputs = input_layer_,
-                            filters = 64 ,
+                            filters = 16 ,
                             kernel_size = 3,
                             strides=(1, 1, 1),
                             padding='same',
@@ -227,7 +227,7 @@ class CNNModel(Model):
 
             conv2 = tf.layers.conv3d(
                 inputs=pool1,
-                filters=128,
+                filters=32,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -239,7 +239,7 @@ class CNNModel(Model):
 
             conv3 = tf.layers.conv3d(
                 inputs=pool2,
-                filters=256,
+                filters=64,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -248,7 +248,7 @@ class CNNModel(Model):
 
             conv3 = tf.layers.conv3d(
                 inputs=conv3,
-                filters=256,
+                filters=64,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -258,7 +258,7 @@ class CNNModel(Model):
 
             conv4 = tf.layers.conv3d(
                 inputs=pool3,
-                filters=512,
+                filters=128,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -267,48 +267,48 @@ class CNNModel(Model):
 
             conv4 = tf.layers.conv3d(
                 inputs=conv4,
-                filters=512,
+                filters=128,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
                 activation=tf.nn.relu,
             )
-            pool4 = tf.layers.max_pooling3d(inputs=conv4, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
+            pool4 = tf.layers.max_pooling3d(inputs=conv4, pool_size=[2, 2, 2], strides=[4, 2, 2], padding='same' )
 
-            conv5 = tf.layers.conv3d(
-                inputs=pool4,
-                filters=512,
-                kernel_size=3,
-                strides=(1, 1, 1),
-                padding='same',
-                activation=tf.nn.relu,
-            )
+            # conv5 = tf.layers.conv3d(
+            #     inputs=pool4,
+            #     filters=512,
+            #     kernel_size=3,
+            #     strides=(1, 1, 1),
+            #     padding='same',
+            #     activation=tf.nn.relu,
+            # )
+            #
+            # conv5 = tf.layers.conv3d(
+            #     inputs=conv5,
+            #     filters=512,
+            #     kernel_size=3,
+            #     strides=(1, 1, 1),
+            #     padding='same',
+            #     activation=tf.nn.relu,
+            # )
+            # pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
-            conv5 = tf.layers.conv3d(
-                inputs=conv5,
-                filters=512,
-                kernel_size=3,
-                strides=(1, 1, 1),
-                padding='same',
-                activation=tf.nn.relu,
-            )
-            pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
-
-            self.model_output_raw = pool5
+            self.model_output_raw = pool4
 
     def reshape_input_layer(self,input_layer_1):
 
         batch_size, seq_len, height, width, num_channels = input_layer_1.shape
         seq_len_array = np.asarray(range(seq_len))
         fist_index = seq_len_array[0:seq_len:8]
-        second_index = seq_len_array[16:seq_len:8]
+        second_index = seq_len_array[15:seq_len:8]
         self.length = min(len(fist_index), len(second_index))
         # coordinate = tf.stack([fist_index[:length], second_index[:length]], axis=1)
         # tf.gather_nd(input_layer_1, )
         new_input_layer = np.zeros(shape=[batch_size, self.length, 16, height, width, num_channels],  dtype=np.float32)
         # new_input_layer = tf.Variable(temp, trainable=False, dtype=tf.float32)
         for i in range(self.length):
-            new_input_layer[:, i, :, :,:,:] = input_layer_1[:, fist_index[i]:second_index[i], :,:,:]
+            new_input_layer[:, i, :, :,:,:] = input_layer_1[:, fist_index[i]:second_index[i]+1, :,:,:]
 
         return new_input_layer
 
@@ -357,14 +357,14 @@ class CNNModel(Model):
             # Densely connected layer with <num_hidden_units> output neurons.
             # Output Tensor Shape: [batch_size, num_hidden_units]
             self.model_output_flat = tf.reshape(self.model_output_raw, [-1, frames*cnn_height * cnn_width * num_filters] )
-            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=4096, activation=tf.nn.relu)
+            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=1024, activation=tf.nn.relu)
 
             dropout_layer = tf.layers.dropout(inputs=self.model_output_flat, rate=self.config['dropout_rate'],
                                                training=self.is_training)
 
-            result = tf.layers.dense(inputs=dropout_layer, units=4096, activation=tf.nn.relu)
+            result = tf.layers.dense(inputs=dropout_layer, units=512, activation=tf.nn.relu)
 
-            self.model_output = tf.reshape(result, [batch_size, -1, 4096])
+            self.model_output = tf.reshape(result, [batch_size, -1, 512])
             # normalize the features
             self.model_output = tf.nn.l2_normalize(self.model_output, axis =2)
 
