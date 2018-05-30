@@ -3,7 +3,7 @@ import tensorflow as tf
 
 # Note that tf.variable_scope enables sharing the parameters so that both training and validation models share the
 # same parameters.
-
+import numpy as np
 
 
 
@@ -33,7 +33,8 @@ class Model():
         if self.mode is not "inference":
             self.input_target_labels = placeholders['labels']
         # todo:?
-        self.seq_loss_mask = tf.expand_dims(tf.sequence_mask(lengths=self.input_seq_len, dtype=tf.float32), -1)
+        self.input_clip_len = (self.input_seq_len - 15)/8
+        self.seq_loss_mask = tf.expand_dims(tf.sequence_mask(lengths=self.input_clip_len, dtype=tf.float32), -1)
 
         # Total number of trainable parameters.
         self.num_parameters = 0
@@ -93,7 +94,7 @@ class Model():
 
         with tf.variable_scope('logits_prediction', reuse=self.reuse, initializer=self.initializer, regularizer=None):
             if self.config['loss_type'] == 'last_logit': # Select the last step. Note that we have variable-length and padded sequences.
-                self.logits = tf.gather_nd(self.logits, tf.stack([tf.range(self.config['batch_size']), self.input_seq_len - 1], axis=1))
+                self.logits = tf.gather_nd(self.logits, tf.stack([tf.range(self.config['batch_size']), self.input_clip_len - 1], axis=1))
                 self.accuracy_logit = self.logits
             elif self.config['loss_type'] == 'average_logit': # Take average of time steps.
                 # shape of the self.seq_loss_mask is [batch_size, seq_len, 1 ]
@@ -151,6 +152,22 @@ class Model():
 
         return self.num_parameters
 
+    # def reshape_input_layer(input_layer_1):
+    #
+    #     batch_size, seq_len, height, width, num_channels = input_layer_1.shape
+    #     seq_len_array = np.asarray(range(seq_len))
+    #     fist_index = seq_len_array[0:seq_len:8]
+    #     second_index = seq_len_array[16:seq_len:8]
+    #     length = min(len(fist_index), len(second_index))
+    #     # coordinate = tf.stack([fist_index[:length], second_index[:length]], axis=1)
+    #     # tf.gather_nd(input_layer_1, )
+    #
+    #     new_input_layer = tf.zeros(shape=[batch_size, length, 16, height, width, num_channels], dtype=tf.float32)
+    #     for i in range(length):
+    #         new_input_layer[:, i, :, :,:,:] = input_layer_1[:, fist_index[i]:second_index[i], :,:,:]
+    #
+    #     # return  new_input_layer, [batch_size, length, 16, height, width, num_channels]
+    #     return new_input_layer
 
 class CNNModel(Model):
     """
@@ -189,39 +206,111 @@ class CNNModel(Model):
         """
         # regularizer_cnn = tf.contrib.layers.l1_regularizer(self.config['regularization_rate'])
         with tf.variable_scope("convolution", reuse=self.reuse, initializer=self.initializer, regularizer=None, custom_getter = super().ema_getter):
-            input_layer_ = self.input_layer
-            for i, num_filter in enumerate(self.config['num_filters']):
+            # frames is 16, is a constant
+            batch_size, clip_num, frames, height, width, num_channels = self.new_input_layer.shape
+            input_layer_ = tf.reshape(self.new_input_layer, [-1, frames, height, width, num_channels])
 
-                conv_layer =  tf.layers.conv3d(
+
+
+
+            conv1 =tf.layers.conv3d(
                             inputs = input_layer_,
-                            filters = num_filter,
-                            kernel_size = [self.config['filter_size'][i], self.config['filter_size'][i], self.config['filter_size'][i]],
+                            filters = 64 ,
+                            kernel_size = 3,
                             strides=(1, 1, 1),
                             padding='same',
                             # data_format='channels_last',
                             # dilation_rate=(1, 1, 1),
                             activation=tf.nn.relu,
                 )
-                # conv_layer = tf.layers.conv2d(inputs=input_layer_,
-                #                               filters=num_filter,
-                #                               kernel_size=[self.config['filter_size'][i], self.config['filter_size'][i]],
-                #                               padding="same",
-                #                               # kernel_regularizer = self.regularizer,
-                #                               activation=tf.nn.relu)
+            pool1 = tf.layers.max_pooling3d(inputs=conv1, pool_size=[1, 2, 2], strides=[1,2,2], padding='same')
 
-                # tf.layers.max_pooling3d(
-                #     inputs,
-                #     pool_size,
-                #     strides,
-                #     padding='valid',
-                #     data_format='channels_last',
-                #     name=None
-                # )
-                # TODO: i don't know
-                pooling_layer = tf.layers.max_pooling3d(inputs=conv_layer, pool_size=[2, 2, 2], strides=[1,2,2], padding='same')
-                input_layer_ = pooling_layer
+            conv2 = tf.layers.conv3d(
+                inputs=pool1,
+                filters=128,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                # data_format='channels_last',
+                # dilation_rate=(1, 1, 1),
+                activation=tf.nn.relu,
+            )
+            pool2 = tf.layers.max_pooling3d(inputs=conv2, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same')
 
-            self.model_output_raw = input_layer_
+            conv3 = tf.layers.conv3d(
+                inputs=pool2,
+                filters=256,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                activation=tf.nn.relu,
+            )
+
+            conv3 = tf.layers.conv3d(
+                inputs=conv3,
+                filters=256,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                activation=tf.nn.relu,
+            )
+            pool3 = tf.layers.max_pooling3d( inputs=conv3, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
+
+            conv4 = tf.layers.conv3d(
+                inputs=pool3,
+                filters=512,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                activation=tf.nn.relu,
+            )
+
+            conv4 = tf.layers.conv3d(
+                inputs=conv4,
+                filters=512,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                activation=tf.nn.relu,
+            )
+            pool4 = tf.layers.max_pooling3d(inputs=conv4, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
+
+            conv5 = tf.layers.conv3d(
+                inputs=pool4,
+                filters=512,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                activation=tf.nn.relu,
+            )
+
+            conv5 = tf.layers.conv3d(
+                inputs=conv5,
+                filters=512,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                activation=tf.nn.relu,
+            )
+            pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
+
+            self.model_output_raw = pool5
+
+    def reshape_input_layer(self,input_layer_1):
+
+        batch_size, seq_len, height, width, num_channels = input_layer_1.shape
+        seq_len_array = np.asarray(range(seq_len))
+        fist_index = seq_len_array[0:seq_len:8]
+        second_index = seq_len_array[16:seq_len:8]
+        self.length = min(len(fist_index), len(second_index))
+        # coordinate = tf.stack([fist_index[:length], second_index[:length]], axis=1)
+        # tf.gather_nd(input_layer_1, )
+        new_input_layer = np.zeros(shape=[batch_size, self.length, 16, height, width, num_channels],  dtype=np.float32)
+        # new_input_layer = tf.Variable(temp, trainable=False, dtype=tf.float32)
+        for i in range(self.length):
+            new_input_layer[:, i, :, :,:,:] = input_layer_1[:, fist_index[i]:second_index[i], :,:,:]
+
+        return new_input_layer
 
     def build_graph(self, input_layer=None):
         with tf.variable_scope("cnn_model", reuse=self.reuse, initializer=self.initializer, regularizer=None, custom_getter = super().ema_getter):
@@ -239,11 +328,26 @@ class CNNModel(Model):
             batch_size, seq_len, height, width, num_channels = self.input_layer.shape
             # non_temporal_input_dims = [-1, height, width, num_channels]
             # self.input_layer = tf.reshape(self.input_layer, non_temporal_input_dims)
+
+            # seq_len_array = tf.range(0, seq_len.value)
+            # fist_index = seq_len_array[0:seq_len:8]
+            # second_index = seq_len_array[16:seq_len:8]
+            # length = tf.minimum(tf.size(fist_index), tf.size(second_index))
+
+
+            self.new_input_layer = tf.py_func(lambda x: self.reshape_input_layer(x),
+                                                [self.input_layer],
+                                                tf.float32
+                                       )
+
+            size = [batch_size, None, 16, height, width, num_channels]
+
+            self.new_input_layer.set_shape(size)
             self.build_network()
 
             # Shape of [batch_size*seq_len, cnn_height, cnn_width, num_filters]
             # for 3D CNN
-            batchsize, batch_seq, cnn_height, cnn_width, num_filters = self.model_output_raw.shape.as_list()
+            batch_clips, frames ,cnn_height, cnn_width, num_filters = self.model_output_raw.shape.as_list()
 
             # for 2D CNN
             # batchsize,  cnn_height, cnn_width, num_filters = self.model_output_raw.shape.as_list()
@@ -252,9 +356,18 @@ class CNNModel(Model):
             # Stack a dense layer to set CNN representation size.
             # Densely connected layer with <num_hidden_units> output neurons.
             # Output Tensor Shape: [batch_size, num_hidden_units]
-            self.model_output_flat = tf.reshape(self.model_output_raw, [-1, cnn_height * cnn_width * num_filters] )
-            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=self.config['num_hidden_units'], activation=tf.nn.relu)
-            self.model_output = tf.reshape(self.model_output_flat, [batch_size, -1, self.config['num_hidden_units']])
+            self.model_output_flat = tf.reshape(self.model_output_raw, [-1, frames*cnn_height * cnn_width * num_filters] )
+            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=4096, activation=tf.nn.relu)
+
+            dropout_layer = tf.layers.dropout(inputs=self.model_output_flat, rate=self.config['dropout_rate'],
+                                               training=self.is_training)
+
+            result = tf.layers.dense(inputs=dropout_layer, units=4096, activation=tf.nn.relu)
+
+            self.model_output = tf.reshape(result, [batch_size, -1, 4096])
+            # normalize the features
+            self.model_output = tf.nn.l2_normalize(self.model_output, axis =2)
+
 
 
 class RNNModel(Model):
@@ -302,7 +415,7 @@ class RNNModel(Model):
             self.build_network()
 
             # Shape of [batch_size, seq_len, representation_size]
-            batch_size, seq_len, representation_size = self.model_output_raw.shape.as_list()
+            batch_size, clips, representation_size = self.model_output_raw.shape.as_list()
 
             self.model_output = self.model_output_raw
             self.model_output_flat = tf.reshape(self.model_output_raw, [-1, representation_size])
