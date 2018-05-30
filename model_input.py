@@ -182,6 +182,7 @@ def read_and_decode_sequence(filename_queue, config):
         # [tf.float32]*skeleton_dim.
 
         # seq_skeleton [0,255]
+
         seq_skeleton = tf.py_func(lambda x:img_preprocessing_op(x),
                            [seq_skeleton],
                             tf.float32,
@@ -191,33 +192,19 @@ def read_and_decode_sequence(filename_queue, config):
         mask_result = tf.py_func(lambda x: x > 150,
                                    [seq_segmentation],
                                    tf.bool,
-                                     )
-
+                                   )
         mask_result.set_shape([None, 80, 80, 3])
         # get the human shape mask image, normalized
+        image_extracted = tf.cast(mask_result, tf.float32)* seq_rgb/255
 
-        # mage_extracted [0,255]
-        image_extracted = tf.cast(mask_result, tf.float32)* seq_rgb
-
-
-
-        #######################
-        ######################
-        # tf.image.flip_left_right()
-        # tf.image.resize_image_with_crop_or_pad()
+        image_extracted = tf.map_fn(lambda x: tf.image.random_flip_left_right(x, seed=6),
+                                     elems=image_extracted,
+                                     dtype=tf.float32,
+                                     back_prop=False
+                                     )
 
 
 
-        # seq_rgb = tf.map_fn(lambda x: img_preprocessing_op(x),
-        #                    elems=seq_rgb,
-        #                    dtype=tf.float32,
-        #                    back_prop=False)
-        # crop image_extracted  and pad it
-
-
-
-        #######################
-        ######################
 
         # Normalize RGB images before feeding into the model.
         # TODO
@@ -226,25 +213,16 @@ def read_and_decode_sequence(filename_queue, config):
         rgb_mean, rgb_std = get_mean_and_std(seq_rgb, axis=[0, 1, 2, 3], keepdims=True)
         seq_rgb = (seq_rgb - rgb_mean)/rgb_std
 
-        # TODO: need further consdieration, we may cut the image and use a new image size.
-        image_extracted_mean, image_extracted_std = get_mean_and_std(image_extracted[:,12:68,20:60,:], axis=[0, 1, 2, 3], keepdims=True )
-        image_extracted = (image_extracted[:,12:68,20:60,:] - image_extracted_mean) /image_extracted_std
-        image_extracted = tf.map_fn( lambda x: img_preprocessing_op_map( x ),
-                                     elems=image_extracted,
-                                     dtype=tf.float32,
-                                     back_prop=False
-                                     )
-        skeleton_mean, skeleton_std = get_mean_and_std(seq_skeleton[:,12:68,20:60,:], axis=[0, 1, 2, 3], keepdims=True )
-        seq_skeleton = (seq_skeleton[:,12:68,20:60,:] - skeleton_mean) / skeleton_std
+        skeleton_mean, skeleton_std = get_mean_and_std(seq_skeleton, axis=[0, 1, 2, 3], keepdims=True )
+        seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
 
-        seq_skeleton= tf.map_fn( lambda x: img_preprocessing_op_map( x ),
+        seq_skeleton = tf.map_fn(lambda x: tf.image.random_flip_left_right(x, seed=6 ),
                                      elems=seq_skeleton,
                                      dtype=tf.float32,
                                      back_prop=False
                                      )
 
-        # normalize tp [-1,1]
-        seq_depth = (seq_depth - 128)/128
+        seq_depth = seq_depth/255
         # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
         # the same format.
         sample = {}
@@ -322,19 +300,17 @@ def read_and_decode_sequence_test_data(filename_queue, config):
                                    [seq_skeleton],
                                    tf.float32,
                                    )
-        seq_skeleton.set_shape([None, 80, 80, 3] )
+        seq_skeleton.set_shape( [None, 80, 80, 3] )
+
         mask_result = tf.py_func( lambda x: x > 150,
                                   [seq_segmentation],
                                   tf.bool,
                                   )
         mask_result.set_shape( [None, 80, 80, 3] )
         # get the human shape mask image, normalized
-        image_extracted = tf.cast( mask_result, tf.float32 ) * seq_rgb
+        image_extracted = tf.cast( mask_result, tf.float32 ) * seq_rgb / 255
 
-        #######################
-        ######################
-        #######################
-        ######################
+
 
         # Normalize RGB images before feeding into the model.
         # TODO
@@ -343,29 +319,10 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         rgb_mean, rgb_std = get_mean_and_std( seq_rgb, axis=[0, 1, 2, 3], keepdims=True )
         seq_rgb = (seq_rgb - rgb_mean) / rgb_std
 
-        # TODO: need further consdieration, we may cut the image and use a new image size.
-        image_extracted_mean, image_extracted_std = get_mean_and_std( image_extracted[:, 12:68, 20:60, :],
-                                                                      axis=[0, 1, 2, 3], keepdims=True )
-        image_extracted = (image_extracted[:, 12:68, 20:60, :] - image_extracted_mean) / image_extracted_std
-        image_extracted = tf.map_fn(lambda x: tf.image.resize_image_with_crop_or_pad(x, target_height=80,
-                                                           target_width=80),
-                                     elems=image_extracted,
-                                     dtype=tf.float32,
-                                     back_prop=False
-                                     )
-        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton[:, 12:68, 20:60, :], axis=[0, 1, 2, 3],
-                                                        keepdims=True )
-        seq_skeleton = (seq_skeleton[:, 12:68, 20:60, :] - skeleton_mean) / skeleton_std
+        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton, axis=[0, 1, 2, 3], keepdims=True )
+        seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
 
-        seq_skeleton = tf.map_fn(lambda x: tf.image.resize_image_with_crop_or_pad(x, target_height=80,
-                                                           target_width=80),
-                                  elems=seq_skeleton,
-                                  dtype=tf.float32,
-                                  back_prop=False
-                                  )
-
-        # normalize tp [-1,1]
-        seq_depth = (seq_depth - 128) / 128
+        seq_depth = seq_depth / 255
         # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
         # the same format.
         sample = {}
