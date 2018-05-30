@@ -33,7 +33,7 @@ class Model():
         if self.mode is not "inference":
             self.input_target_labels = placeholders['labels']
         # todo:?
-        self.input_clip_len = tf.to_int32(((self.input_seq_len - 15)/8)) + 1
+        self.input_clip_len = tf.to_int32(((self.input_seq_len - 1 - 15)/8)) + 1
         self.seq_loss_mask = tf.expand_dims(tf.sequence_mask(lengths=self.input_clip_len, dtype=tf.float32), -1)
 
         # Total number of trainable parameters.
@@ -300,15 +300,15 @@ class CNNModel(Model):
 
         batch_size, seq_len, height, width, num_channels = input_layer_1.shape
         seq_len_array = np.asarray(range(seq_len))
-        fist_index = seq_len_array[0:seq_len:8]
+        # fist_index = seq_len_array[0:seq_len:8]
         second_index = seq_len_array[15:seq_len:8]
-        self.length = min(len(fist_index), len(second_index))
+        self.length = len(second_index)
         # coordinate = tf.stack([fist_index[:length], second_index[:length]], axis=1)
         # tf.gather_nd(input_layer_1, )
         new_input_layer = np.zeros(shape=[batch_size, self.length, 16, height, width, num_channels],  dtype=np.float32)
         # new_input_layer = tf.Variable(temp, trainable=False, dtype=tf.float32)
         for i in range(self.length):
-            new_input_layer[:, i, :, :,:,:] = input_layer_1[:, fist_index[i]:second_index[i]+1, :,:,:]
+            new_input_layer[:, i, :, :,:,:] = input_layer_1[:, second_index[i] - 15:second_index[i]+1, :,:,:]
 
         return new_input_layer
 
