@@ -195,7 +195,7 @@ class CNNModel(Model):
                 conv_layer =  tf.layers.conv3d(
                             inputs = input_layer_,
                             filters = num_filter,
-                            kernel_size = [self.config['filter_size'][i]+7, self.config['filter_size'][i], self.config['filter_size'][i]],
+                            kernel_size = [self.config['filter_size'][i], self.config['filter_size'][i], self.config['filter_size'][i]],
                             strides=(1, 1, 1),
                             padding='same',
                             # data_format='channels_last',
