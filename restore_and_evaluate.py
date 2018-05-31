@@ -121,4 +121,4 @@ if __name__ == '__main__':
 
     main(config)
 
-    # python3 restore_and_evaluate.py -M "lstm1_512_cnn5_drop3_5e4_avg_logit_1527443055" -C "16065"
+    # python3 restore_and_evaluate.py -M "lstm1_512_cnn5_drop3_5e4_avg_logit_1527722646" -C "16065"

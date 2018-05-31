@@ -69,8 +69,7 @@ def main(config):
         # input2rnn = tf.concat([training_placeholders['skeleton'], cnnModel.model_output], 2)
         trainModel.build_graph(input_layer=cnnModel.model_output)
         trainModel.build_loss()
-        # apply moving average
-        ema_op = ema.apply(tf.trainable_variables())
+
         print("\n# of parameters: %s"%trainModel.get_num_parameters())
 
         ##############
@@ -91,8 +90,7 @@ def main(config):
         train_op1 = optimizer.minimize(trainModel.loss, global_step=global_step)
 
 
-        with tf.control_dependencies([train_op1, ema_op]):
-            train_op = tf.no_op(name="train_ema")
+
     ###################
     # Validation Model
     ###################
@@ -111,6 +109,10 @@ def main(config):
         validModel.build_graph(input_layer=validCnnModel.model_output)
         validModel.build_loss()
 
+    # apply moving average
+    ema_op = ema.apply( tf.trainable_variables() )
+    with tf.control_dependencies( [train_op1, ema_op] ):
+        train_op = tf.no_op( name="train_ema" )
     ##############
     # Monitoring
     ##############
@@ -186,7 +188,7 @@ def main(config):
 
     # save all the variables
     # keep 10 checkpoints
-    saver = tf.train.Saver(max_to_keep=10, save_relative_paths=True )
+    saver = tf.train.Saver(max_to_keep=15, save_relative_paths=True )
     # Define counters in order to accumulate measurements.
     counter_correct_predictions_training = 0.0
     counter_loss_training = 0.0

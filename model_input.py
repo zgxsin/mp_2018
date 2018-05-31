@@ -197,11 +197,11 @@ def read_and_decode_sequence(filename_queue, config):
         # get the human shape mask image, normalized
         image_extracted = tf.cast(mask_result, tf.float32)* seq_rgb/255
 
-        image_extracted = tf.map_fn(lambda x: tf.image.random_flip_left_right(x, seed=6),
-                                     elems=image_extracted,
-                                     dtype=tf.float32,
-                                     back_prop=False
-                                     )
+        # image_extracted = tf.map_fn(lambda x: tf.image.random_flip_left_right(x, seed=6),
+        #                              elems=image_extracted,
+        #                              dtype=tf.float32,
+        #                              back_prop=False
+        #                              )
 
 
 
@@ -215,12 +215,12 @@ def read_and_decode_sequence(filename_queue, config):
 
         skeleton_mean, skeleton_std = get_mean_and_std(seq_skeleton, axis=[0, 1, 2, 3], keepdims=True )
         seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
-
-        seq_skeleton = tf.map_fn(lambda x: tf.image.random_flip_left_right(x, seed=6 ),
-                                     elems=seq_skeleton,
-                                     dtype=tf.float32,
-                                     back_prop=False
-                                     )
+        # no flips
+        # seq_skeleton = tf.map_fn(lambda x: tf.image.random_flip_left_right(x, seed=6),
+        #                              elems=seq_skeleton,
+        #                              dtype=tf.float32,
+        #                              back_prop=False
+        #                              )
 
         seq_depth = seq_depth/255
         # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
