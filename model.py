@@ -115,7 +115,8 @@ class Model():
                                                          if 'bias' not in v.name])
 
                 if self.config['loss_type'] == 'average_loss':
-                    labels_all_steps = tf.tile(tf.expand_dims(self.input_target_labels, dim=1), [1, tf.reduce_max(self.input_seq_len)])
+                    # Todo: check further
+                    labels_all_steps = tf.tile(tf.expand_dims(self.input_target_labels, dim=1), [1, tf.reduce_max(self.input_clip_len)])
                     self.loss = tf.contrib.seq2seq.sequence_loss(logits=self.logits,
                                                                  targets=labels_all_steps,
                                                                  weights=self.seq_loss_mask[:, :, 0],
@@ -400,7 +401,7 @@ class RNNModel(Model):
             self.model_output_raw, self.rnn_state = tf.nn.dynamic_rnn(cell=self.rnn_cell,
                                                                       inputs=self.input_layer,
                                                                       dtype=tf.float32,
-                                                                      sequence_length=self.input_seq_len,
+                                                                      sequence_length=self.input_clip_len,
                                                                       time_major=False,
                                                                       swap_memory=True)
 
