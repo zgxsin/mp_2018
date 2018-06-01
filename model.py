@@ -34,6 +34,7 @@ class Model():
             self.input_target_labels = placeholders['labels']
         # todo:?
         self.input_clip_len = tf.to_int32(((self.input_seq_len - 1 - 15)/8)) + 1
+        # shape [batch_size, clip_lenth, 1]
         self.seq_loss_mask = tf.expand_dims(tf.sequence_mask(lengths=self.input_clip_len, dtype=tf.float32), -1)
 
         # Total number of trainable parameters.
@@ -247,14 +248,14 @@ class CNNModel(Model):
                 activation=tf.nn.relu,
             )
 
-            # conv3 = tf.layers.conv3d(
-            #     inputs=conv3,
-            #     filters=64,
-            #     kernel_size=3,
-            #     strides=(1, 1, 1),
-            #     padding='same',
-            #     activation=tf.nn.relu,
-            # )
+            conv3 = tf.layers.conv3d(
+                inputs=conv3,
+                filters=64,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                activation=tf.nn.relu,
+            )
             pool3 = tf.layers.max_pooling3d(inputs=conv3, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
             conv4 = tf.layers.conv3d(
@@ -285,14 +286,14 @@ class CNNModel(Model):
                 activation=tf.nn.relu,
             )
             #
-            # conv5 = tf.layers.conv3d(
-            #     inputs=conv5,
-            #     filters=512,
-            #     kernel_size=3,
-            #     strides=(1, 1, 1),
-            #     padding='same',
-            #     activation=tf.nn.relu,
-            # )
+            conv5 = tf.layers.conv3d(
+                inputs=conv5,
+                filters=512,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                activation=tf.nn.relu,
+            )
             pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
             self.model_output_raw = pool5
@@ -367,7 +368,7 @@ class CNNModel(Model):
 
             self.model_output = tf.reshape(result, [batch_size, -1, 512])
             # normalize the features
-            self.model_output = tf.nn.l2_normalize(self.model_output, axis =2)
+            # self.model_output = tf.nn.l2_normalize(self.model_output, axis =2)
 
 
 

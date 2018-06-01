@@ -39,7 +39,7 @@ config['num_epochs'] = 25
 config['evaluate_every_step'] = config['num_steps_per_epoch']*2 # every two epoch, evaluate the model performance
 config['checkpoint_every_step'] = config['num_steps_per_epoch']*5 # every 5 epoch save the model
 config['num_validation_steps'] = int(config['num_validation_samples']/config['batch_size'])
-config['print_every_step'] = 50
+config['print_every_step'] = 30
 
 # Here I provide three common techniques to calculate sequence loss.
 # (1) 'last_logit': calculate loss by using only the last step prediction.
@@ -54,7 +54,7 @@ config['inputs']['queue_capacity'] = config['batch_size']*20
 config['inputs']['num_read_threads'] = 4
 config['inputs']['num_epochs'] = config['num_epochs']
 config['inputs']['batch_size'] = config['batch_size']
-config['inputs']['img_height'] = 80 # Input size.
+config['inputs']['img_height'] = 80  #Input size.
 config['inputs']['img_width'] = 80
 config['inputs']['img_num_channels'] = 3
 config['inputs']['skeleton_size'] = 180
