@@ -174,7 +174,6 @@ def read_and_decode_sequence(filename_queue, config):
         seq_skeleton = tf.to_float(tf.reshape(seq_skeleton, (-1, 180)))
 
         ###############################
-        # TODO
         # Here you can apply preprocessing/augmentation on input frames (it is commented).
         # tf.map_fn applies the preprocessing function on every image in the sequence, i.e., frame.
 
@@ -207,7 +206,6 @@ def read_and_decode_sequence(filename_queue, config):
 
 
         # Normalize RGB images before feeding into the model.
-        # TODO
         # Here we calculate statistics locally (i.e., per sequence sample). You can iterate over the whole dataset once
         # and calculate global statistics for later use.
         rgb_mean, rgb_std = get_mean_and_std(seq_rgb, axis=[0, 1, 2, 3], keepdims=True)
@@ -289,7 +287,6 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         seq_skeleton = tf.reshape(seq_skeleton, (seq_len, 180))
 
         ###############################
-        # TODO
         # Here you can apply preprocessing/augmentation on input frames (it is commented).
         # tf.map_fn applies the preprocessing function on every image in the sequence, i.e., frame.
         # seq_rgb = tf.map_fn(lambda x: img_preprocessing_op(x),
@@ -313,7 +310,6 @@ def read_and_decode_sequence_test_data(filename_queue, config):
 
 
         # Normalize RGB images before feeding into the model.
-        # TODO
         # Here we calculate statistics locally (i.e., per sequence sample). You can iterate over the whole dataset once
         # and calculate global statistics for later use.
         rgb_mean, rgb_std = get_mean_and_std( seq_rgb, axis=[0, 1, 2, 3], keepdims=True )

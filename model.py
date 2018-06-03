@@ -21,7 +21,6 @@ class Model():
 
         self.config = config
         self.input_placeholders = placeholders
-
         assert mode in ["training", "validation", "inference"]
         self.mode = mode
         self.is_training = self.mode == "training"
@@ -32,8 +31,12 @@ class Model():
         self.input_seq_len = placeholders['seq_len']
         if self.mode is not "inference":
             self.input_target_labels = placeholders['labels']
-        # todo:?
-        self.input_clip_len = tf.to_int32(((self.input_seq_len - 1 - 15)/8)) + 1
+
+        if self.config['frame_overlap'] == 0:
+            self.input_clip_len = tf.to_int32(((self.input_seq_len - config['frame_lenth'])/config['frame_lenth'])) + 1
+
+        else:
+            self.input_clip_len = tf.to_int32(((self.input_seq_len - config['frame_lenth']) / config['frame_overlap'])) + 1
         # shape [batch_size, clip_lenth, 1]
         self.seq_loss_mask = tf.expand_dims(tf.sequence_mask(lengths=self.input_clip_len, dtype=tf.float32), -1)
 
@@ -217,7 +220,7 @@ class CNNModel(Model):
 
             conv1 =tf.layers.conv3d(
                             inputs = input_layer_,
-                            filters = 16 ,
+                            filters = 64 ,
                             kernel_size = 3,
                             strides=(1, 1, 1),
                             padding='same',
@@ -229,7 +232,7 @@ class CNNModel(Model):
 
             conv2 = tf.layers.conv3d(
                 inputs=pool1,
-                filters=32,
+                filters=128,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -241,7 +244,7 @@ class CNNModel(Model):
 
             conv3 = tf.layers.conv3d(
                 inputs=pool2,
-                filters=64,
+                filters=256,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -250,7 +253,7 @@ class CNNModel(Model):
 
             conv3 = tf.layers.conv3d(
                 inputs=conv3,
-                filters=64,
+                filters=256,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -260,7 +263,7 @@ class CNNModel(Model):
 
             conv4 = tf.layers.conv3d(
                 inputs=pool3,
-                filters=128,
+                filters=512,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -269,7 +272,7 @@ class CNNModel(Model):
 
             conv4 = tf.layers.conv3d(
                 inputs=conv4,
-                filters=128,
+                filters=512,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -279,7 +282,7 @@ class CNNModel(Model):
 
             conv5 = tf.layers.conv3d(
                 inputs=pool4,
-                filters=256,
+                filters=512,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -298,19 +301,23 @@ class CNNModel(Model):
 
             self.model_output_raw = pool5
 
-    def reshape_input_layer(self,input_layer_1):
+    def reshape_input_layer(self, input_layer_1):
 
         batch_size, seq_len, height, width, num_channels = input_layer_1.shape
         seq_len_array = np.asarray(range(seq_len))
         # fist_index = seq_len_array[0:seq_len:8]
-        second_index = seq_len_array[15:seq_len:8]
+        if self.config['frame_overlap'] == 0:
+            second_index = seq_len_array[self.config['frame_lenth']-1:seq_len:self.config['frame_lenth']]
+
+        else:
+            second_index = seq_len_array[self.config['frame_lenth'] - 1:seq_len:self.config['frame_overlap']]
         self.length = len(second_index)
         # coordinate = tf.stack([fist_index[:length], second_index[:length]], axis=1)
         # tf.gather_nd(input_layer_1, )
-        new_input_layer = np.zeros(shape=[batch_size, self.length, 16, height, width, num_channels],  dtype=np.float32)
+        new_input_layer = np.zeros(shape=[batch_size, self.length, self.config['frame_lenth'], height, width, num_channels],  dtype=np.float32)
         # new_input_layer = tf.Variable(temp, trainable=False, dtype=tf.float32)
         for i in range(self.length):
-            new_input_layer[:, i, :, :,:,:] = input_layer_1[:, second_index[i] - 15:second_index[i]+1, :,:,:]
+            new_input_layer[:, i, :, :,:,:] = input_layer_1[:, second_index[i] - self.config['frame_lenth']+1:second_index[i]+1, :,:,:]
 
         return new_input_layer
 
@@ -318,7 +325,6 @@ class CNNModel(Model):
         with tf.variable_scope("cnn_model", reuse=self.reuse, initializer=self.initializer, regularizer=None, custom_getter = super().ema_getter):
             if input_layer is None:
                 # Here we use RGB modality only.
-                # TODO_GX: need some operations here
                 self.input_layer = self.input_rgb
             else:
                 self.input_layer = input_layer
@@ -342,14 +348,14 @@ class CNNModel(Model):
                                                 tf.float32
                                        )
 
-            size = [batch_size, None, 16, height, width, num_channels]
+            size = [batch_size, None, self.config['frame_lenth'], height, width, num_channels]
 
             self.new_input_layer.set_shape(size)
             self.build_network()
 
             # Shape of [batch_size*seq_len, cnn_height, cnn_width, num_filters]
             # for 3D CNN
-            batch_clips, frames ,cnn_height, cnn_width, num_filters = self.model_output_raw.shape.as_list()
+            batch_clips, frames, cnn_height, cnn_width, num_filters = self.model_output_raw.shape.as_list()
 
             # for 2D CNN
             # batchsize,  cnn_height, cnn_width, num_filters = self.model_output_raw.shape.as_list()
@@ -359,14 +365,14 @@ class CNNModel(Model):
             # Densely connected layer with <num_hidden_units> output neurons.
             # Output Tensor Shape: [batch_size, num_hidden_units]
             self.model_output_flat = tf.reshape(self.model_output_raw, [-1, frames*cnn_height * cnn_width * num_filters] )
-            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=1024, activation=tf.nn.relu)
+            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=2048, activation=tf.nn.relu)
 
             dropout_layer = tf.layers.dropout(inputs=self.model_output_flat, rate=self.config['dropout_rate'],
                                                training=self.is_training)
 
-            result = tf.layers.dense(inputs=dropout_layer, units=512, activation=tf.nn.relu)
+            self.model_output_flat = tf.layers.dense(inputs=dropout_layer, units=1024, activation=tf.nn.relu)
 
-            self.model_output = tf.reshape(result, [batch_size, -1, 512])
+            self.model_output = tf.reshape(self.model_output_flat, [batch_size, -1, 1024])
             # normalize the features
             # self.model_output = tf.nn.l2_normalize(self.model_output, axis =2)
 

@@ -58,6 +58,10 @@ config['inputs']['img_height'] = 80  #Input size.
 config['inputs']['img_width'] = 80
 config['inputs']['img_num_channels'] = 3
 config['inputs']['skeleton_size'] = 180
+## setting the 3dcnn frame lenth and overlap
+config['frame_lenth'] = 8
+config['frame_overlap'] = 0
+
 
 # CNN model parameters
 config['cnn'] = {}
@@ -71,7 +75,10 @@ config['cnn']['num_class_labels'] = 20
 config['cnn']['batch_size'] = config['batch_size']
 config['cnn']['loss_type'] = config['loss_type']
 config['cnn']['regularization_rate'] = 0.0001 # this is the rate for L2 or L1 regularizer
-config['cnn']['moving_average_decay'] = 0.998 # moving_average_rate todo: just highlight
+config['cnn']['moving_average_decay'] = 0.998 # moving_average_rate
+config['cnn']['frame_lenth'] = config['frame_lenth']
+config['cnn']['frame_overlap'] = config['frame_overlap']
+
 
 # RNN model parameters
 config['rnn'] = {}
@@ -84,7 +91,9 @@ config['rnn']['num_class_labels'] = 20
 config['rnn']['batch_size'] = config['batch_size']
 config['rnn']['loss_type'] = config['loss_type']
 config['rnn']['regularization_rate'] = 0.0001 # this is the rate for L2 or L1 regularizer
-config['rnn']['moving_average_decay'] = 0.99 # moving_average_rate
+config['rnn']['moving_average_decay'] = 0.998 # moving_average_rate
+config['rnn']['frame_lenth'] = config['frame_lenth']
+config['rnn']['frame_overlap'] = config['frame_overlap']
 
 
 # You can set descriptive experiment names or simply set empty string ''.

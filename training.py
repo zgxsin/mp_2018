@@ -13,7 +13,6 @@ from Skeleton import Skeleton
 
 
 def main(config):
-    # TODO
     # Here you can call your preprocessing functions. If you generate intermediate representations, you should be
     # using config['tmp_dir'] directory.
     # If you use a different training/validation split than what we provide, please make sure that this split is
