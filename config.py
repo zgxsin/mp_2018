@@ -60,7 +60,9 @@ config['inputs']['img_num_channels'] = 3
 config['inputs']['skeleton_size'] = 180
 ## setting the 3dcnn frame lenth and overlap
 config['frame_lenth'] = 8
-config['frame_overlap'] = 2
+config['real_frame_overlap'] = 2
+
+config['frame_overlap'] = config['frame_lenth'] - config['real_frame_overlap']
 
 
 # CNN model parameters

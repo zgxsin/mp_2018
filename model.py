@@ -32,11 +32,11 @@ class Model():
         if self.mode is not "inference":
             self.input_target_labels = placeholders['labels']
 
-        if self.config['frame_overlap'] == 0:
-            self.input_clip_len = tf.to_int32(((self.input_seq_len - config['frame_lenth'])/config['frame_lenth'])) + 1
-
-        else:
-            self.input_clip_len = tf.to_int32(((self.input_seq_len - config['frame_lenth']) / config['frame_overlap'])) + 1
+        # if self.config['frame_overlap'] == 0:
+        #     self.input_clip_len = tf.to_int32(((self.input_seq_len - config['frame_lenth'])/config['frame_lenth'])) + 1
+        #
+        # else:
+        self.input_clip_len = tf.to_int32(((self.input_seq_len - config['frame_lenth']) / config['frame_overlap'])) + 1
         # shape [batch_size, clip_lenth, 1]
         self.seq_loss_mask = tf.expand_dims(tf.sequence_mask(lengths=self.input_clip_len, dtype=tf.float32), -1)
 
@@ -289,11 +289,11 @@ class CNNModel(Model):
         batch_size, seq_len, height, width, num_channels = input_layer_1.shape
         seq_len_array = np.asarray(range(seq_len))
         # fist_index = seq_len_array[0:seq_len:8]
-        if self.config['frame_overlap'] == 0:
-            second_index = seq_len_array[self.config['frame_lenth']-1:seq_len:self.config['frame_lenth']]
-
-        else:
-            second_index = seq_len_array[self.config['frame_lenth'] - 1:seq_len:self.config['frame_overlap']]
+        # if self.config['frame_overlap'] == 0:
+        #     second_index = seq_len_array[self.config['frame_lenth']-1:seq_len:self.config['frame_lenth']]
+        #
+        # else:
+        second_index = seq_len_array[self.config['frame_lenth'] - 1:seq_len:self.config['frame_overlap']]
         self.length = len(second_index)
         # coordinate = tf.stack([fist_index[:length], second_index[:length]], axis=1)
         # tf.gather_nd(input_layer_1, )
