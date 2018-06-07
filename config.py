@@ -10,13 +10,13 @@ config['log_dir'] = './runs/'
 # In case your pre/post-processing scripts generate intermediate results, you may use config['tmp_dir'] to store them.
 config['tmp_dir'] = './tmp/'
 # Path to training, validation and test data folders.
-config['train_data_dir'] = "../train/"
-config['valid_data_dir'] = "../validation/"
-config['test_data_dir'] = "../test/"
+# config['train_data_dir'] = "../train/"
+# config['valid_data_dir'] = "../validation/"
+# config['test_data_dir'] = "../test/"
 
-# config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
-# config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
-# config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
+config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
+config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
+config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
 ##################################################################
 # You can modify the rest or add new fields as you need.
 
@@ -26,8 +26,8 @@ config['num_validation_samples'] = 1765
 config['num_training_samples'] = 5722
 
 # Hyper-parameters and training configuration.
-# config['batch_size'] = 16
-config['batch_size'] = 16   ## modified by GX
+config['batch_size'] = 16
+# config['batch_size'] = 16   ## modified by GX
 config['learning_rate'] = 5e-4
 # Learning rate is annealed exponentially in 'exponential' case. Don't forget to change annealing configuration in the code.
 config['learning_rate_type'] = 'exponential' #'fixed' or 'exponential'
@@ -39,7 +39,7 @@ config['num_epochs'] = 25
 config['evaluate_every_step'] = config['num_steps_per_epoch']*2 # every two epoch, evaluate the model performance
 config['checkpoint_every_step'] = config['num_steps_per_epoch']*5 # every 5 epoch save the model
 config['num_validation_steps'] = int(config['num_validation_samples']/config['batch_size'])
-config['print_every_step'] = 30
+config['print_every_step'] = 2
 
 # Here I provide three common techniques to calculate sequence loss.
 # (1) 'last_logit': calculate loss by using only the last step prediction.
@@ -84,8 +84,8 @@ config['cnn']['frame_overlap'] = config['frame_overlap']
 config['rnn'] = {}
 config['rnn']['num_hidden_units'] = 512 # Number of units in an LSTM cell.
 # config['rnn']['num_hidden_units'] = 512 # GX add
-# config['rnn']['dropout_rate'] = 0.3
-config['rnn']['dropout_rate'] = 0.4 ## GX add
+config['rnn']['dropout_rate'] = 0.3
+# config['rnn']['dropout_rate'] = 0.4
 config['rnn']['num_layers'] = 1 # Number of LSTM stack.
 config['rnn']['num_class_labels'] = 20
 config['rnn']['batch_size'] = config['batch_size']

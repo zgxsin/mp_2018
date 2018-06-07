@@ -157,23 +157,6 @@ class Model():
 
         return self.num_parameters
 
-    # def reshape_input_layer(input_layer_1):
-    #
-    #     batch_size, seq_len, height, width, num_channels = input_layer_1.shape
-    #     seq_len_array = np.asarray(range(seq_len))
-    #     fist_index = seq_len_array[0:seq_len:8]
-    #     second_index = seq_len_array[16:seq_len:8]
-    #     length = min(len(fist_index), len(second_index))
-    #     # coordinate = tf.stack([fist_index[:length], second_index[:length]], axis=1)
-    #     # tf.gather_nd(input_layer_1, )
-    #
-    #     new_input_layer = tf.zeros(shape=[batch_size, length, 16, height, width, num_channels], dtype=tf.float32)
-    #     for i in range(length):
-    #         new_input_layer[:, i, :, :,:,:] = input_layer_1[:, fist_index[i]:second_index[i], :,:,:]
-    #
-    #     # return  new_input_layer, [batch_size, length, 16, height, width, num_channels]
-    #     return new_input_layer
-
 class CNNModel(Model):
     """
     Convolutional neural network for sequence modeling.
@@ -209,9 +192,8 @@ class CNNModel(Model):
         """
         Stacks convolutional layers where each layer consists of CNN+Pooling operations.
         """
-        # regularizer_cnn = tf.contrib.layers.l1_regularizer(self.config['regularization_rate'])
         with tf.variable_scope("convolution", reuse=self.reuse, initializer=self.initializer, regularizer=None, custom_getter = super().ema_getter):
-            # frames is 16, is a constant
+            # frames is 8, is a constant
             batch_size, clip_num, frames, height, width, num_channels = self.new_input_layer.shape
             input_layer_ = tf.reshape(self.new_input_layer, [-1, frames, height, width, num_channels])
 
@@ -220,7 +202,7 @@ class CNNModel(Model):
 
             conv1 =tf.layers.conv3d(
                             inputs = input_layer_,
-                            filters = 64 ,
+                            filters = 16 ,
                             kernel_size = 3,
                             strides=(1, 1, 1),
                             padding='same',
@@ -232,7 +214,7 @@ class CNNModel(Model):
 
             conv2 = tf.layers.conv3d(
                 inputs=pool1,
-                filters=128,
+                filters=32,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -244,7 +226,7 @@ class CNNModel(Model):
 
             conv3 = tf.layers.conv3d(
                 inputs=pool2,
-                filters=256,
+                filters=64,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -253,7 +235,7 @@ class CNNModel(Model):
 
             conv3 = tf.layers.conv3d(
                 inputs=conv3,
-                filters=256,
+                filters=64,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -263,26 +245,27 @@ class CNNModel(Model):
 
             conv4 = tf.layers.conv3d(
                 inputs=pool3,
-                filters=512,
+                filters=128,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
                 activation=tf.nn.relu,
             )
 
-            conv4 = tf.layers.conv3d(
-                inputs=conv4,
-                filters=512,
-                kernel_size=3,
-                strides=(1, 1, 1),
-                padding='same',
-                activation=tf.nn.relu,
-            )
+            # conv4 = tf.layers.conv3d(
+            #     inputs=conv4,
+            #     filters=128,
+            #     kernel_size=3,
+            #     strides=(1, 1, 1),
+            #     padding='same',
+            #     activation=tf.nn.relu,
+            # )
+
             pool4 = tf.layers.max_pooling3d(inputs=conv4, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
             conv5 = tf.layers.conv3d(
                 inputs=pool4,
-                filters=512,
+                filters=256,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -291,7 +274,7 @@ class CNNModel(Model):
             #
             conv5 = tf.layers.conv3d(
                 inputs=conv5,
-                filters=512,
+                filters=256,
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
@@ -317,7 +300,7 @@ class CNNModel(Model):
         new_input_layer = np.zeros(shape=[batch_size, self.length, self.config['frame_lenth'], height, width, num_channels],  dtype=np.float32)
         # new_input_layer = tf.Variable(temp, trainable=False, dtype=tf.float32)
         for i in range(self.length):
-            new_input_layer[:, i, :, :,:,:] = input_layer_1[:, second_index[i] - self.config['frame_lenth']+1:second_index[i]+1, :,:,:]
+            new_input_layer[:, i, :, :,:,:] = input_layer_1[:, second_index[i]+1 - self.config['frame_lenth']:second_index[i]+1, :,:,:]
 
         return new_input_layer
 
@@ -365,7 +348,7 @@ class CNNModel(Model):
             # Densely connected layer with <num_hidden_units> output neurons.
             # Output Tensor Shape: [batch_size, num_hidden_units]
             self.model_output_flat = tf.reshape(self.model_output_raw, [-1, frames*cnn_height * cnn_width * num_filters] )
-            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=2048, activation=tf.nn.relu)
+            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=1024, activation=tf.nn.relu)
 
             dropout_layer = tf.layers.dropout(inputs=self.model_output_flat, rate=self.config['dropout_rate'],
                                                training=self.is_training)
