@@ -208,7 +208,7 @@ class CNNModel(Model):
                             padding='same',
                             # data_format='channels_last',
                             # dilation_rate=(1, 1, 1),
-                            activation=tf.nn.relu,
+                            activation=tf.nn.leaky_relu,
                 )
             pool1 = tf.layers.max_pooling3d(inputs=conv1, pool_size=[1, 2, 2], strides=[1,2,2], padding='same')
 
@@ -220,7 +220,7 @@ class CNNModel(Model):
                 padding='same',
                 # data_format='channels_last',
                 # dilation_rate=(1, 1, 1),
-                activation=tf.nn.relu,
+                activation=tf.nn.leaky_relu,
             )
             pool2 = tf.layers.max_pooling3d(inputs=conv2, pool_size=[1, 2, 2], strides=[1, 2, 2], padding='same')
 
@@ -230,7 +230,7 @@ class CNNModel(Model):
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
-                activation=tf.nn.relu,
+                activation=tf.nn.leaky_relu,
             )
 
             # conv3 = tf.layers.conv3d(
@@ -249,7 +249,7 @@ class CNNModel(Model):
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
-                activation=tf.nn.relu,
+                activation=tf.nn.leaky_relu,
             )
 
             # conv4 = tf.layers.conv3d(
@@ -269,7 +269,7 @@ class CNNModel(Model):
                 kernel_size=3,
                 strides=(1, 1, 1),
                 padding='same',
-                activation=tf.nn.relu,
+                activation=tf.nn.leaky_relu,
             )
             #
             # conv5 = tf.layers.conv3d(
@@ -348,12 +348,12 @@ class CNNModel(Model):
             # Densely connected layer with <num_hidden_units> output neurons.
             # Output Tensor Shape: [batch_size, num_hidden_units]
             self.model_output_flat = tf.reshape(self.model_output_raw, [-1, frames*cnn_height * cnn_width * num_filters] )
-            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=1024, activation=tf.nn.relu)
+            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=1024, activation=tf.nn.leaky_relu)
 
             dropout_layer = tf.layers.dropout(inputs=self.model_output_flat, rate=self.config['dropout_rate'],
                                                training=self.is_training)
 
-            self.model_output_flat = tf.layers.dense(inputs=dropout_layer, units=1024, activation=tf.nn.relu)
+            self.model_output_flat = tf.layers.dense(inputs=dropout_layer, units=1024, activation=tf.nn.leaky_relu)
 
             self.model_output = tf.reshape(self.model_output_flat, [batch_size, -1, 1024])
             # normalize the features
