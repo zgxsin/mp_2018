@@ -10,13 +10,13 @@ config['log_dir'] = './runs/'
 # In case your pre/post-processing scripts generate intermediate results, you may use config['tmp_dir'] to store them.
 config['tmp_dir'] = './tmp/'
 # Path to training, validation and test data folders.
-# config['train_data_dir'] = "../train/"
-# config['valid_data_dir'] = "../validation/"
-# config['test_data_dir'] = "../test/"
+config['train_data_dir'] = "../train/"
+config['valid_data_dir'] = "../validation/"
+config['test_data_dir'] = "../test/"
 
-config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
-config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
-config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
+# config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
+# config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
+# config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
 ##################################################################
 # You can modify the rest or add new fields as you need.
 
@@ -60,7 +60,7 @@ config['inputs']['img_num_channels'] = 3
 config['inputs']['skeleton_size'] = 180
 ## setting the 3dcnn frame lenth and overlap
 config['frame_lenth'] = 8
-config['frame_overlap'] = 0
+config['frame_overlap'] = 2
 
 
 # CNN model parameters

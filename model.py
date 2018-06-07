@@ -222,7 +222,7 @@ class CNNModel(Model):
                 # dilation_rate=(1, 1, 1),
                 activation=tf.nn.relu,
             )
-            pool2 = tf.layers.max_pooling3d(inputs=conv2, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same')
+            pool2 = tf.layers.max_pooling3d(inputs=conv2, pool_size=[1, 2, 2], strides=[1, 2, 2], padding='same')
 
             conv3 = tf.layers.conv3d(
                 inputs=pool2,
