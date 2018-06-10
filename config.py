@@ -26,18 +26,18 @@ config['num_validation_samples'] = 1765
 config['num_training_samples'] = 5722
 
 # Hyper-parameters and training configuration.
-config['batch_size'] = 16
+config['batch_size'] = 20
 # config['batch_size'] = 16   ## modified by GX
-config['learning_rate'] = 5e-2
+config['learning_rate'] = 2e-5
 # Learning rate is annealed exponentially in 'exponential' case. Don't forget to change annealing configuration in the code.
 config['learning_rate_type'] = 'exponential' #'fixed' or 'exponential'
 config['regularization_rate'] = 0.0001 # this is the rate for L2 or L1 regularizer
 config['num_steps_per_epoch'] = int(config['num_training_samples']/config['batch_size'])
 
-config['num_epochs'] = 25
+config['num_epochs'] = 50
 # config['num_epochs'] = 50 ## modified by GX
 config['evaluate_every_step'] = config['num_steps_per_epoch']*2 # every two epoch, evaluate the model performance
-config['checkpoint_every_step'] = config['num_steps_per_epoch']*5 # every 5 epoch save the model
+config['checkpoint_every_step'] = config['num_steps_per_epoch']*2 # every 5 epoch save the model
 config['num_validation_steps'] = int(config['num_validation_samples']/config['batch_size'])
 config['print_every_step'] = 50
 

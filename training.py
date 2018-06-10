@@ -77,7 +77,7 @@ def main(config):
         if config['learning_rate_type'] == 'exponential':
             learning_rate = tf.train.exponential_decay(config['learning_rate'],
                                                        global_step=global_step,
-                                                       decay_steps=500,
+                                                       decay_steps=850,
                                                        decay_rate=0.97,
                                                        staircase=False)
         elif config['learning_rate_type'] == 'fixed':
