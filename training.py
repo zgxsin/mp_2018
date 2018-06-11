@@ -142,26 +142,29 @@ def main(config):
     ##############################
 
     # Load Previous Model and initialize weights
-    # restored_variables = tf.trainable_variables()
-    # restore_saver = tf.train.Saver(var_list=restored_variables )
-    # # latest_checkpoint(checkpoint_dir, latest_filename=None)
-    # # checkpoint_path = tf.train.latest_checkpoint("~/Workspace/Data/zgxsin_data/source_code/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1526236758 ")
+    restored_variables = tf.trainable_variables()
+    # change the dence layer
+    del restored_variables[12:16]
+
+    restore_saver = tf.train.Saver(var_list=restored_variables )
+    # latest_checkpoint(checkpoint_dir, latest_filename=None)
+    checkpoint_path = tf.train.latest_checkpoint("/Users/zhou/Desktop/MP-RemoteFile/lstm1_512_cnn5_drop3_5e4_avg_logit_1527722646")
     # checkpoint_path = tf.train.latest_checkpoint(
     #     " /cluster/home/guzhou/NewMP10/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1528668704/for_pretrain")
-    # print('Restoring from ', checkpoint_path)
-    # restore_saver.restore(session, checkpoint_path )
-    #
-    # # Initialize remaining uninitialized variables
-    # all_variables = tf.global_variables() + tf.local_variables()
-    # initialized_list = []
-    # for varIdx in range(len(all_variables)):
-    #     variable = all_variables[varIdx]
-    #     varFlag = session.run(tf.is_variable_initialized(variable))
-    #     if not varFlag:
-    #         initialized_list.append(variable )
-    #
-    # init_op = tf.variables_initializer(initialized_list, name='init_remaining' )
-    # session.run(init_op)
+    print('Restoring from ', checkpoint_path)
+    restore_saver.restore(session, checkpoint_path )
+
+    # Initialize remaining uninitialized variables
+    all_variables = tf.global_variables() + tf.local_variables()
+    initialized_list = []
+    for varIdx in range(len(all_variables)):
+        variable = all_variables[varIdx]
+        varFlag = session.run(tf.is_variable_initialized(variable))
+        if not varFlag:
+            initialized_list.append(variable )
+
+    init_op = tf.variables_initializer(initialized_list, name='init_remaining' )
+    session.run(init_op)
 
     ##############################
     # Restoring and Initialization  DaiQi_add
@@ -169,9 +172,9 @@ def main(config):
 
 
     # Add the ops to initialize variables.
-    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-    # Actually initialize the variables
-    session.run(init_op)
+    # init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+    # # Actually initialize the variables
+    # session.run(init_op)
 
     # Register summary ops.
     train_summary_dir = os.path.join(config['model_dir'], "summary", "train")

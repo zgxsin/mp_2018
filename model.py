@@ -354,9 +354,9 @@ class CNNModel(Model):
             dropout_layer = tf.layers.dropout(inputs=self.model_output_flat, rate=self.config['dropout_rate'],
                                                training=self.is_training)
 
-            self.model_output_flat = tf.layers.dense(inputs=dropout_layer, units=1024, activation=tf.nn.leaky_relu)
+            self.model_output_flat = tf.layers.dense(inputs=dropout_layer, units= 512, activation=tf.nn.leaky_relu)
 
-            self.model_output = tf.reshape(self.model_output_flat, [batch_size, -1, 1024])
+            self.model_output = tf.reshape(self.model_output_flat, [batch_size, -1, 512])
             # normalize the features
             # self.model_output = tf.nn.l2_normalize(self.model_output, axis =2)
 
