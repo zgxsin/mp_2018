@@ -81,6 +81,25 @@ class Model():
         """
         raise NotImplementedError('subclasses must override build_network()')
 
+    def get_weighted_logit(self, logits, input_seq_len):
+        # Divide the logits into four groups
+        # Assigned weight is [0.2, 0.4, 0.6, 2.8]
+        batch_size, max_seq_len, num_labels = logits.shape
+        weighted_logit_mask = np.zeros((batch_size, max_seq_len, num_labels), dtype = np.float32)
+
+        for i in range(batch_size):
+            seq_len = input_seq_len[i]
+            
+            Idx_1 = np.int32(np.floor(seq_len/4.0))
+            Idx_2 = 2 * Idx_1
+            Idx_3 = 3 * Idx_1
+            weighted_logit_mask[i, 0:Idx_1, :] = np.float32(0.2)
+            weighted_logit_mask[i, Idx_1:Idx_2, :] = np.float32(0.4)
+            weighted_logit_mask[i, Idx_2:Idx_3, :] = np.float32(0.6)
+            weighted_logit_mask[i, Idx_3:seq_len, :] = np.float32(2.8)
+
+        return weighted_logit_mask
+
     def build_loss(self):
         """
         Calculates classification loss depending on loss type. We are trying to assign a class label to input
@@ -109,6 +128,14 @@ class Model():
             elif self.config['loss_type'] == 'average_loss':
                 # TODO_GX: this is a bug. It is same with above, need to be fixed
                 self.accuracy_logit = tf.reduce_mean(self.logits*self.seq_loss_mask, axis=1)
+            elif self.config['loss_type'] == 'weighted_logit':
+                self.weighted_loss_mask = tf.py_func(lambda x, y: self.get_weighted_logit(x, y),
+                                                [self.logits, self.input_seq_len],
+                                                tf.float32)
+                self.logits = tf.reduce_mean(self.logits*self.weighted_loss_mask, axis=1)
+                # self.original_logits = self.logits
+                # self.logits = tf.reduce_mean(self.weighted_logit*self.seq_loss_mask, axis=1)
+                self.accuracy_logit = self.logits
             else:
                 raise Exception("Invalid loss type")
 
@@ -188,6 +215,7 @@ class CNNModel(Model):
     #
     #         self.model_output_raw = input_layer_
 
+
     def build_network(self):
         """
         Stacks convolutional layers where each layer consists of CNN+Pooling operations.
@@ -196,9 +224,6 @@ class CNNModel(Model):
             # frames is 8, is a constant
             batch_size, clip_num, frames, height, width, num_channels = self.new_input_layer.shape
             input_layer_ = tf.reshape(self.new_input_layer, [-1, frames, height, width, num_channels])
-
-
-
 
             conv1 =tf.layers.conv3d(
                             inputs = input_layer_,
@@ -232,7 +257,8 @@ class CNNModel(Model):
                 padding='same',
                 activation=tf.nn.leaky_relu,
             )
-
+            
+            '''
             conv3 = tf.layers.conv3d(
                 inputs=conv3,
                 filters=64,
@@ -241,7 +267,9 @@ class CNNModel(Model):
                 padding='same',
                 activation=tf.nn.leaky_relu,
             )
+            '''
             pool3 = tf.layers.max_pooling3d(inputs=conv3, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
+            
 
             conv4 = tf.layers.conv3d(
                 inputs=pool3,
@@ -271,7 +299,7 @@ class CNNModel(Model):
                 padding='same',
                 activation=tf.nn.leaky_relu,
             )
-            #
+            '''
             conv5 = tf.layers.conv3d(
                 inputs=conv5,
                 filters=256,
@@ -280,6 +308,7 @@ class CNNModel(Model):
                 padding='same',
                 activation=tf.nn.relu,
             )
+            '''
             pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
             self.model_output_raw = pool5

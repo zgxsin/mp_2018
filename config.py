@@ -14,9 +14,9 @@ config['tmp_dir'] = './tmp/'
 # config['valid_data_dir'] = "../validation/"
 # config['test_data_dir'] = "../test/"
 
-config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
-config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
-config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
+config['train_data_dir'] = "/cluster/scratch/daiq/train/"
+config['valid_data_dir'] = "/cluster/scratch/daiq/validation/"
+config['test_data_dir'] = "../test/"
 ##################################################################
 # You can modify the rest or add new fields as you need.
 
@@ -26,7 +26,7 @@ config['num_validation_samples'] = 1765
 config['num_training_samples'] = 5722
 
 # Hyper-parameters and training configuration.
-config['batch_size'] = 20
+config['batch_size'] = 30
 # config['batch_size'] = 16   ## modified by GX
 config['learning_rate'] = 2e-5
 # Learning rate is annealed exponentially in 'exponential' case. Don't forget to change annealing configuration in the code.
@@ -45,7 +45,7 @@ config['print_every_step'] = 50
 # (1) 'last_logit': calculate loss by using only the last step prediction.
 # (2) 'average_logit': calculate loss by using average of predictions across all steps.
 # (3) 'average_loss': calculate loss for each time-step by using the same sequence label.
-config['loss_type'] = 'average_logit' # 'last_logit', 'average_logit', 'average_loss'.
+config['loss_type'] = 'weighted_logit' # 'last_logit', 'average_logit', 'average_loss', 'weighted_logit'.
 # config['loss_type'] = 'last_logit' # GX_modified
 
 # Dataset and Input Pipeline Configuration
@@ -60,7 +60,7 @@ config['inputs']['img_num_channels'] = 3
 config['inputs']['skeleton_size'] = 180
 ## setting the 3dcnn frame lenth and overlap
 config['frame_lenth'] = 8
-config['real_frame_overlap'] = 2
+config['real_frame_overlap'] = 0
 config['frame_overlap'] = config['frame_lenth'] - config['real_frame_overlap']
 
 
@@ -106,4 +106,5 @@ timestamp = str(int(time.time()))
 model_folder_name = timestamp if config['model_name'] == '' else config['model_name'] + '_' + timestamp
 config['model_id'] = model_folder_name
 config['model_dir'] = os.path.abspath(os.path.join(config['log_dir'], model_folder_name))
+config['trained_model_dir'] = './trained_model/'
 print("Writing to {}\n".format(config['model_dir']))
