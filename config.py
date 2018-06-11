@@ -60,7 +60,7 @@ config['inputs']['img_num_channels'] = 3
 config['inputs']['skeleton_size'] = 180
 ## setting the 3dcnn frame lenth and overlap
 config['frame_lenth'] = 8
-config['real_frame_overlap'] = 2
+config['real_frame_overlap'] = 0
 config['frame_overlap'] = config['frame_lenth'] - config['real_frame_overlap']
 
 
@@ -85,7 +85,7 @@ config['cnn']['frame_overlap'] = config['frame_overlap']
 config['rnn'] = {}
 config['rnn']['num_hidden_units'] = 512 # Number of units in an LSTM cell.
 # config['rnn']['num_hidden_units'] = 512 # GX add
-config['rnn']['dropout_rate'] = 0.3
+config['rnn']['dropout_rate'] = 0.4
 # config['rnn']['dropout_rate'] = 0.4
 config['rnn']['num_layers'] = 1 # Number of LSTM stack.
 config['rnn']['num_class_labels'] = 20
