@@ -101,7 +101,9 @@ def main(config):
 
     # Writes submission file.
     sorted_labels = [label for _, label in sorted(zip(test_sample_ids, test_predictions))]
-    createSubmissionFile(sorted_labels, outputFile=os.path.join(config['model_dir'], 'submission_' + config['model_id'] + '.csv'))
+    # createSubmissionFile(sorted_labels, outputFile=os.path.join(config['model_dir'], 'submission_' + config['model_id'] + '.csv'))
+    createSubmissionFile( sorted_labels, outputFile=os.path.join( config['model_dir'],
+                                                                  'submission_' + config['model_id'] + '_' + str( args.checkpoint_id ) + '.csv' ) )
 
 
 if __name__ == '__main__':

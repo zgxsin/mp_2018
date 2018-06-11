@@ -24,6 +24,7 @@ def applyMask(img, segmentedUser):
     Applies mask on the given image for visualization.
     """
     if len(img.shape) > 2: # Color image
+
         mask3 = segmentedUser > 150
         masked_img = img * mask3
     else:

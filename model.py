@@ -233,14 +233,14 @@ class CNNModel(Model):
                 activation=tf.nn.leaky_relu,
             )
 
-            # conv3 = tf.layers.conv3d(
-            #     inputs=conv3,
-            #     filters=64,
-            #     kernel_size=3,
-            #     strides=(1, 1, 1),
-            #     padding='same',
-            #     activation=tf.nn.relu,
-            # )
+            conv3 = tf.layers.conv3d(
+                inputs=conv3,
+                filters=64,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                activation=tf.nn.leaky_relu,
+            )
             pool3 = tf.layers.max_pooling3d(inputs=conv3, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
             conv4 = tf.layers.conv3d(
@@ -258,7 +258,7 @@ class CNNModel(Model):
             #     kernel_size=3,
             #     strides=(1, 1, 1),
             #     padding='same',
-            #     activation=tf.nn.relu,
+            #     activation=tf.nn.leaky_relu,
             # )
 
             pool4 = tf.layers.max_pooling3d(inputs=conv4, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
@@ -272,14 +272,14 @@ class CNNModel(Model):
                 activation=tf.nn.leaky_relu,
             )
             #
-            # conv5 = tf.layers.conv3d(
-            #     inputs=conv5,
-            #     filters=256,
-            #     kernel_size=3,
-            #     strides=(1, 1, 1),
-            #     padding='same',
-            #     activation=tf.nn.relu,
-            # )
+            conv5 = tf.layers.conv3d(
+                inputs=conv5,
+                filters=256,
+                kernel_size=3,
+                strides=(1, 1, 1),
+                padding='same',
+                activation=tf.nn.leaky_relu,
+            )
             pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
             self.model_output_raw = pool5
