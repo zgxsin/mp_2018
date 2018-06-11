@@ -148,9 +148,9 @@ def main(config):
 
     restore_saver = tf.train.Saver(var_list=restored_variables )
     # latest_checkpoint(checkpoint_dir, latest_filename=None)
-    checkpoint_path = tf.train.latest_checkpoint("/Users/zhou/Desktop/MP-RemoteFile/lstm1_512_cnn5_drop3_5e4_avg_logit_1527722646")
-    # checkpoint_path = tf.train.latest_checkpoint(
-    #     " /cluster/home/guzhou/NewMP10/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1528668704/for_pretrain")
+    # checkpoint_path = tf.train.latest_checkpoint("/Users/zhou/Desktop/MP-RemoteFile/lstm1_512_cnn5_drop3_5e4_avg_logit_1527722646")
+    checkpoint_path = tf.train.latest_checkpoint(
+       " /cluster/home/guzhou/NewMP10/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1528668704/for_pretrain")
     print('Restoring from ', checkpoint_path)
     restore_saver.restore(session, checkpoint_path )
 
