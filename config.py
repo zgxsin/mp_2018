@@ -10,13 +10,13 @@ config['log_dir'] = './runs/'
 # In case your pre/post-processing scripts generate intermediate results, you may use config['tmp_dir'] to store them.
 config['tmp_dir'] = './tmp/'
 # Path to training, validation and test data folders.
-# config['train_data_dir'] = "../train/"
-# config['valid_data_dir'] = "../validation/"
-# config['test_data_dir'] = "../test/"
+config['train_data_dir'] = "../train/"
+config['valid_data_dir'] = "../validation/"
+config['test_data_dir'] = "../test/"
 
-config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
-config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
-config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
+# config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
+# config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
+# config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
 ##################################################################
 # You can modify the rest or add new fields as you need.
 
@@ -28,7 +28,7 @@ config['num_training_samples'] = 5722
 # Hyper-parameters and training configuration.
 config['batch_size'] = 20
 # config['batch_size'] = 16   ## modified by GX
-config['learning_rate'] = 5e-4
+config['learning_rate'] = 5e-5
 # Learning rate is annealed exponentially in 'exponential' case. Don't forget to change annealing configuration in the code.
 config['learning_rate_type'] = 'exponential' #'fixed' or 'exponential'
 config['regularization_rate'] = 0.0001 # this is the rate for L2 or L1 regularizer
