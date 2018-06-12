@@ -10,13 +10,13 @@ config['log_dir'] = './runs/'
 # In case your pre/post-processing scripts generate intermediate results, you may use config['tmp_dir'] to store them.
 config['tmp_dir'] = './tmp/'
 # Path to training, validation and test data folders.
-# config['train_data_dir'] = "../train/"
-# config['valid_data_dir'] = "../validation/"
-# config['test_data_dir'] = "../test/"
+config['train_data_dir'] = "../train/"
+config['valid_data_dir'] = "../validation/"
+config['test_data_dir'] = "../test/"
 
-config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
-config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
-config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
+# config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
+# config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
+# config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
 ##################################################################
 # You can modify the rest or add new fields as you need.
 
@@ -71,6 +71,7 @@ config['cnn']['filter_size'] = [3,3,3,3,3,3] # Kernel size. Assuming kxk kernels
 config['cnn']['num_hidden_units'] = 512 # Number of units in the last dense layer, i.e. representation size.
 # config['cnn']['num_hidden_units'] = 400
 config['cnn']['dropout_rate'] = 0.25
+config['keep_rate_cov'] = 0.9
 # config['cnn']['dropout_rate'] = 0. ## modified by GX
 config['cnn']['num_class_labels'] = 20
 config['cnn']['batch_size'] = config['batch_size']

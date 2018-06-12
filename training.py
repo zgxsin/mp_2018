@@ -56,9 +56,10 @@ def main(config):
     ema = tf.train.ExponentialMovingAverage(0.998, global_step)
     with tf.name_scope("Training"):
         # Create model
+        cnn_layer_keep_rate = tf.placeholder_with_default(1.0, shape=(), name="cnn_layer_keep_rate")
         cnnModel = CNNModel(config=config['cnn'],
                             placeholders=training_placeholders,
-                            mode='training',ema= ema)
+                            mode='training',keep_rate=cnn_layer_keep_rate ,ema= ema)
         cnnModel.build_graph(input_layer=training_input_layer)
 
         trainModel = RNNModel(config=config['rnn'],
@@ -146,13 +147,13 @@ def main(config):
     # Load Previous Model and initialize weights
     restored_variables = tf.trainable_variables()
     # change the dence layer
-    # del restored_variables[12:16]
+    del restored_variables[12:16]
 
     restore_saver = tf.train.Saver(var_list=restored_variables )
     # latest_checkpoint(checkpoint_dir, latest_filename=None)
-    checkpoint_path = tf.train.latest_checkpoint("/cluster/home/guzhou/pretrain_checkpoint_mp2018")
-    # checkpoint_path = tf.train.latest_checkpoint(
-    #     " /cluster/home/guzhou/NewMP10/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1528668704/for_pretrain")
+    # checkpoint_path = tf.train.latest_checkpoint("/cluster/home/guzhou/pretrain_checkpoint_mp2018")
+    checkpoint_path = tf.train.latest_checkpoint(
+        "/Users/zhou/Desktop/MP-RemoteFile/for_pretrain")
     print('Restoring from ', checkpoint_path)
     restore_saver.restore(session, checkpoint_path )
 
@@ -226,7 +227,7 @@ def main(config):
                                                                         trainModel.num_correct_predictions,
                                                                         trainModel.loss,
                                                                         train_op],
-                                                                       feed_dict={})
+                                                                       feed_dict={cnn_layer_keep_rate:config['keep_rate_cov']})
             # visual_skele = session.run([training_placeholders['skeleton']])
             # visual_rgb = session.run( [training_placeholders['rgb']] )
             # import matplotlib.pyplot as plt
@@ -246,7 +247,7 @@ def main(config):
                 loss_avg = counter_loss_training/(config['print_every_step'])
                 # Feed average performance.
                 summary_report = session.run(summaries_evaluation,
-                                             feed_dict={accuracy_avg_pl: accuracy_avg, loss_avg_pl: loss_avg})
+                                             feed_dict={accuracy_avg_pl: accuracy_avg, loss_avg_pl: loss_avg, cnn_layer_keep_rate: config['keep_rate_cov']})
                 train_summary_writer.add_summary(summary_report, step)
                 time_elapsed = (time.perf_counter() - start_time)/config['print_every_step']
                 print("[Train/%d] Accuracy: %.3f, Loss: %.3f, time/step = %.3f"%(step,
