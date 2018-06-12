@@ -44,7 +44,7 @@ def img_preprocessing_op(image_op):
     :param image_op:
     :return:
     """
-    with tf.name_scope("img_preprocessing"):
+    with tf.name_scope("img_preprocessing1"):
         # Convert from RGB to greyscale.
         # image_op = tf.image.rgb_to_grayscale(image_op)
 
@@ -88,31 +88,8 @@ def img_preprocessing_op_map(image_op):
     :param image_op:
     :return:
     """
-    with tf.name_scope("img_preprocessing"):
-        # Convert from RGB to greyscale.
-        # image_op = tf.image.rgb_to_grayscale(image_op)
+    with tf.name_scope("img_preprocessing2"):
 
-        # Crop
-        #image_op = tf.image.resize_image_with_crop_or_pad(image_op, 60, 60)
-
-        # Resize operation requires 4D tensors (i.e., batch of images).
-        # Reshape the image so that it looks like a batch of one sample: [1,60,60,1]
-        #image_op = tf.expand_dims(image_op, 0)
-        # Resize
-        #image_op = tf.image.resize_bilinear(image_op, np.asarray([32,32]))
-        # Reshape the image: [32,32,1]
-        #image_op = tf.squeeze(image_op, 0)
-
-        # Normalize (zero-mean unit-variance) the image locally, i.e., by using statistics of the
-        # image not the whole data or sequence.
-        # image_op = tf.image.per_image_standardization(image_op)
-
-        # Flatten image
-        # y.set_shape(image_op.get_shape())
-        # image_op_ = tf.TensorArray(
-        #     dtype=tf.float32, size=0, dynamic_size=True)
-        # image_op = tf.image.resize_image_with_crop_or_pad(image_op, target_height=0.7*image_op.shape[0].value,
-        #                                        target_width= 0.5*image_op.shape[1].value)
 
         image_op = tf.image.resize_image_with_crop_or_pad(image_op, target_height=80,
                                                            target_width=80)
@@ -123,6 +100,70 @@ def img_preprocessing_op_map(image_op):
 
         return image_op_post
 
+def random_crop_rotation_scaling(image_op):
+    """
+    Creates preprocessing operations that are going to be applied on a single frame.
+
+    You can do any preprocessing (masking, normalization/scaling of inputs, augmentation, etc.) by using tensorflow
+    operations. Here I provided some examples commented in the code. You can find more built-in image operations at
+    https://www.tensorflow.org/api_docs/python/tf/image .
+
+    :param image_op:
+    :return:
+    """
+    with tf.name_scope("img_preprocessing3"):
+        # first, crop the images
+
+        image_op = tf.random_crop(image_op, size=[tf.shape(image_op)[0], 56, 56, tf.shape(image_op)[3]])
+        # todo: radian or ?
+        # second, rotate the images
+        angles = int(np.random.uniform(-15,16))
+        rotated_image_op = tf.contrib.image.rotate(
+                            image_op,
+                            angles,
+                            interpolation='NEAREST',
+                            name=None
+                        )
+
+
+
+        # image_op = tf.image.resize_image_with_crop_or_pad(image_op, target_height=80, target_width=80)
+        # tf.contrib.image.translate(
+        #     images,
+        #     translations,
+        #     interpolation='NEAREST',
+        #     name=None
+        # )
+
+
+        # thrid, add pepper and salt nosie
+        image_op_post = rotated_image_op
+
+        return image_op_post
+
+
+def add_salt_pepper_noise(X_imgs):
+    # Need to produce a copy as to not modify the original image
+    X_imgs_copy = X_imgs.copy()
+    row, col, _ = X_imgs_copy[0].shape
+    salt_vs_pepper = 0.2
+    amount = 0.004
+    num_salt = np.ceil( amount * X_imgs_copy[0].size * salt_vs_pepper )
+    num_pepper = np.ceil( amount * X_imgs_copy[0].size * (1.0 - salt_vs_pepper) )
+
+    for X_img in X_imgs_copy:
+        # Add Salt noise
+        coords = [np.random.randint( 0, i - 1, int( num_salt )) for i in X_img.shape]
+        X_img[coords[0], coords[1], :] = 1
+
+        # Add Pepper noise
+        coords = [np.random.randint( 0, i - 1, int( num_pepper ) ) for i in X_img.shape]
+        X_img[coords[0], coords[1], :] = 0
+    X_imgs_copy= X_imgs_copy.astype(np.float32)
+    return X_imgs_copy
+
+
+# salt_pepper_noise_imgs = add_salt_pepper_noise( X_imgs )
 
 def read_and_decode_sequence(filename_queue, config):
     # Create a TFRecordReader.
@@ -184,6 +225,8 @@ def read_and_decode_sequence(filename_queue, config):
 
         # seq_skeleton [0,255]
 
+
+
         seq_skeleton = tf.py_func(lambda x:img_preprocessing_op(x),
                            [seq_skeleton],
                             tf.float32,
@@ -195,8 +238,10 @@ def read_and_decode_sequence(filename_queue, config):
                                    tf.bool,
                                    )
         mask_result.set_shape([None, 80, 80, 3])
-        # get the human shape mask image, normalized
+        # get the human shape mask image
         image_extracted = tf.cast(mask_result, tf.float32)* seq_rgb
+
+        single_sample = tf.concat([seq_rgb, seq_skeleton, seq_depth], axis=3)
 
         # image_extracted = tf.map_fn(lambda x: tf.image.random_flip_left_right(x, seed=6),
         #                              elems=image_extracted,
@@ -210,31 +255,46 @@ def read_and_decode_sequence(filename_queue, config):
         # Normalize RGB images before feeding into the model.
         # Here we calculate statistics locally (i.e., per sequence sample). You can iterate over the whole dataset once
         # and calculate global statistics for later use.
-        rgb_mean, rgb_std = get_mean_and_std(seq_rgb, axis=[0, 1, 2, 3], keepdims=True)
-        seq_rgb = (seq_rgb - rgb_mean)/rgb_std
+        # rgb_mean, rgb_std = get_mean_and_std(seq_rgb, axis=[0, 1, 2, 3], keepdims=True)
+        # seq_rgb = (seq_rgb - rgb_mean)/rgb_std
 
-        image_extracted_mean, image_extracted_std = get_mean_and_std( image_extracted[:, 12:68, 20:60, :],
-                                                                      axis=[0, 1, 2, 3], keepdims=True )
-        image_extracted = (image_extracted[:, 12:68, 20:60, :] - image_extracted_mean) / image_extracted_std
-        image_extracted = tf.map_fn( lambda x: img_preprocessing_op_map( x ),
-                                     elems=image_extracted,
-                                     dtype=tf.float32,
-                                     back_prop=False
-                                     )
-        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton[:, 12:68, 20:60, :], axis=[0, 1, 2, 3],
-                                                        keepdims=True )
-        seq_skeleton = (seq_skeleton[:, 12:68, 20:60, :] - skeleton_mean) / skeleton_std
 
-        seq_skeleton = tf.map_fn( lambda x: img_preprocessing_op_map( x ),
-                                  elems=seq_skeleton,
-                                  dtype=tf.float32,
-                                  back_prop=False
-                                  )
+        single_sample = tf.py_func(lambda x: add_salt_pepper_noise(x),
+                             [single_sample],
+                             tf.float32,)
+        single_sample.set_shape([None, 80, 80, 7])
+        # for the convinience of map_fun
+        single_sample = tf.expand_dims(single_sample, axis=0 )
+
+        single_sample = tf.map_fn(lambda x:random_crop_rotation_scaling(x),
+                                    elems=single_sample,
+                                    dtype = tf.float32,
+                                    back_prop= False
+                                                    )
+
+        single_sample = tf.squeeze(single_sample, [0])
+
+        single_sample.set_shape([None, 56, 56, 7])
+
+
+        # skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton[:, 12:68, 20:60, :], axis=[0, 1, 2, 3],
+        #                                                 keepdims=True )
+        # seq_skeleton = (seq_skeleton[:, 12:68, 20:60, :] - skeleton_mean) / skeleton_std
+
+        # seq_skeleton = tf.map_fn( lambda x: img_preprocessing_op_map( x ),
+        #                           elems=seq_skeleton,
+        #                           dtype=tf.float32,
+        #                           back_prop=False
+        #                           )
 
         # normalize tp [-1,1]
-        seq_depth = (seq_depth - 128) / 128
+        # seq_depth = (seq_depth - 128) / 128
         # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
         # the same format.
+        seq_rgb = single_sample[:,:,:,0:3]
+        seq_skeleton = single_sample[:,:,:,3:6]
+        seq_depth = single_sample[:,:,:,6]
+        seq_depth = tf.reshape(seq_depth,(-1, 56, 56, 1))
         sample = {}
         sample['rgb'] = seq_rgb
         sample['depth'] = seq_depth
@@ -319,36 +379,18 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         # get the human shape mask image, normalized
         image_extracted = tf.cast( mask_result, tf.float32 ) * seq_rgb
 
+        single_sample = tf.concat([seq_rgb, seq_skeleton, seq_depth], axis=3 )
 
-
-        # Normalize RGB images before feeding into the model.
-        # Here we calculate statistics locally (i.e., per sequence sample). You can iterate over the whole dataset once
-        # and calculate global statistics for later use.
-        rgb_mean, rgb_std = get_mean_and_std( seq_rgb, axis=[0, 1, 2, 3], keepdims=True )
-        seq_rgb = (seq_rgb - rgb_mean) / rgb_std
-
-        image_extracted_mean, image_extracted_std = get_mean_and_std( image_extracted[:, 12:68, 20:60, :],
-                                                                      axis=[0, 1, 2, 3], keepdims=True )
-        image_extracted = (image_extracted[:, 12:68, 20:60, :] - image_extracted_mean) / image_extracted_std
-        image_extracted = tf.map_fn( lambda x: tf.image.resize_image_with_crop_or_pad( x, target_height=80,
-                                                                                       target_width=80 ),
-                                     elems=image_extracted,
-                                     dtype=tf.float32,
-                                     back_prop=False
-                                     )
-        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton[:, 12:68, 20:60, :], axis=[0, 1, 2, 3],
-                                                        keepdims=True )
-        seq_skeleton = (seq_skeleton[:, 12:68, 20:60, :] - skeleton_mean) / skeleton_std
-
-        seq_skeleton = tf.map_fn( lambda x: tf.image.resize_image_with_crop_or_pad( x, target_height=80,
-                                                                                    target_width=80 ),
-                                  elems=seq_skeleton,
+        single_sample = tf.map_fn(lambda x: tf.image.central_crop(x,central_fraction=0.7),
+                                  elems=single_sample,
                                   dtype=tf.float32,
-                                  back_prop=False
-                                  )
+                                  back_prop=False)
 
-        # normalize tp [-1,1]
-        seq_depth = (seq_depth - 128) / 128
+        seq_rgb = single_sample[:, :, :, 0:3]
+        seq_skeleton = single_sample[:, :, :, 3:6]
+        seq_depth = single_sample[:, :, :, 6]
+        seq_depth = tf.reshape( seq_depth, (-1, 56, 56, 1) )
+
         # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
         # the same format.
         sample = {}
