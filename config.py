@@ -38,7 +38,7 @@ config['num_steps_per_epoch'] = int(config['num_training_samples']/config['batch
 config['num_epochs'] = 25
 # config['num_epochs'] = 50 ## modified by GX
 # config['evaluate_every_step'] = config['num_steps_per_epoch']*2 # every two epoch, evaluate the model performance
-config['evaluate_every_step'] = config['num_steps_per_epoch']
+config['evaluate_every_step'] = config['num_steps_per_epoch']*2
 config['checkpoint_every_step'] = config['num_steps_per_epoch']*2 # every 5 epoch save the model
 config['num_validation_steps'] = int(config['num_validation_samples']/config['batch_size'])
 config['print_every_step'] = 50
@@ -108,5 +108,5 @@ timestamp = str(int(time.time()))
 model_folder_name = timestamp if config['model_name'] == '' else config['model_name'] + '_' + timestamp
 config['model_id'] = model_folder_name
 config['model_dir'] = os.path.abspath(os.path.join(config['log_dir'], model_folder_name))
-config['trained_model_dir'] = './runs/fourth_try_1144/'
+config['trained_model_dir'] = './runs/fifth_try_572/'
 print("Writing to {}\n".format(config['model_dir']))

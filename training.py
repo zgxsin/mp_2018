@@ -172,7 +172,7 @@ def main(config):
     # Restoring and Initialization  DaiQi_add
     ##############################
 
-
+    '''
     # Add the ops to initialize variables.
     # init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
     # # Actually initialize the variables

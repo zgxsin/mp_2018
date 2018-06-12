@@ -216,6 +216,7 @@ class CNNModel(Model):
 
         return output
 
+
     def build_network(self):
         """
         Stacks convolutional layers where each layer consists of CNN+Pooling operations.
