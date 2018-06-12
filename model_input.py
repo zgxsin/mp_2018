@@ -1,6 +1,7 @@
 import tensorflow as tf
 from Skeleton import Skeleton
 import numpy as np
+import math
 
 
 def get_mean_and_std(tensor, axis, keepdims=False):
@@ -117,7 +118,8 @@ def random_crop_rotation_scaling(image_op):
         image_op = tf.random_crop(image_op, size=[tf.shape(image_op)[0], 56, 56, tf.shape(image_op)[3]])
         # todo: radian or ?
         # second, rotate the images
-        angles = int(np.random.uniform(-15,16))
+        angles = math.pi/180 *int(np.random.uniform(-15,16))
+        # print(angles)
         rotated_image_op = tf.contrib.image.rotate(
                             image_op,
                             angles,
