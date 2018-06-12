@@ -56,7 +56,10 @@ class Model():
         self.model_output_flat = None
 
         #self.initializer = tf.contrib.layers.xavier_initializer()
-        self.initializer = tf.glorot_normal_initializer()
+        # self.initializer = tf.glorot_normal_initializer()
+        self.initializer = tf.truncated_normal_initializer( mean=0.0, stddev=0.01)
+
+
 
     def ema_getter(self, getter, name, *args, **kwargs):
         var = getter(name, *args, **kwargs)
