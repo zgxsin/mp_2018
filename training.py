@@ -43,8 +43,8 @@ def main(config):
 
 
     # add normalized depth info to the CNN training data, replace rgb with mask_image
-    training_input_layer = tf.concat([training_placeholders['mask'],  training_placeholders['skeleton'],training_placeholders['depth']],4)
-    validation_input_layer = tf.concat([validation_placeholders['mask'], validation_placeholders['skeleton'],validation_placeholders['depth']], 4 )
+    training_input_layer = tf.concat([training_placeholders['rgb'],  training_placeholders['skeleton'],training_placeholders['depth']],4)
+    validation_input_layer = tf.concat([validation_placeholders['rgb'], validation_placeholders['skeleton'],validation_placeholders['depth']], 4 )
 
     ##################
     # Training Model
@@ -74,10 +74,12 @@ def main(config):
         ##############
         # Optimization
         ##############
+        #   decayed_learning_rate = learning_rate *
+        #                  decay_rate ^ (global_step / decay_steps)
         if config['learning_rate_type'] == 'exponential':
             learning_rate = tf.train.exponential_decay(config['learning_rate'],
                                                        global_step=global_step,
-                                                       decay_steps=850,
+                                                       decay_steps=500,
                                                        decay_rate=0.97,
                                                        staircase=False)
         elif config['learning_rate_type'] == 'fixed':
@@ -142,26 +144,29 @@ def main(config):
     ##############################
 
     # Load Previous Model and initialize weights
-    # restored_variables = tf.trainable_variables()
-    # restore_saver = tf.train.Saver(var_list=restored_variables )
-    # # latest_checkpoint(checkpoint_dir, latest_filename=None)
-    # # checkpoint_path = tf.train.latest_checkpoint("~/Workspace/Data/zgxsin_data/source_code/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1526236758 ")
+    restored_variables = tf.trainable_variables()
+    # change the dence layer
+    # del restored_variables[12:16]
+
+    restore_saver = tf.train.Saver(var_list=restored_variables )
+    # latest_checkpoint(checkpoint_dir, latest_filename=None)
+    checkpoint_path = tf.train.latest_checkpoint(config['trained_model_dir'])
     # checkpoint_path = tf.train.latest_checkpoint(
-    #     " /Users/zhou/MP2018_Edit/mp18-dynamic-gesture-recognition/source_code/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1526652032")
-    # print('Restoring from ', checkpoint_path)
-    # restore_saver.restore(session, checkpoint_path )
-    #
-    # # Initialize remaining uninitialized variables
-    # all_variables = tf.global_variables() + tf.local_variables()
-    # initialized_list = []
-    # for varIdx in range(len(all_variables)):
-    #     variable = all_variables[varIdx]
-    #     varFlag = session.run(tf.is_variable_initialized(variable))
-    #     if not varFlag:
-    #         initialized_list.append(variable )
-    #
-    # init_op = tf.variables_initializer(initialized_list, name='init_remaining' )
-    # session.run(init_op)
+    #     " /cluster/home/guzhou/NewMP10/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1528668704/for_pretrain")
+    print('Restoring from ', checkpoint_path)
+    restore_saver.restore(session, checkpoint_path )
+
+    # Initialize remaining uninitialized variables
+    all_variables = tf.global_variables() + tf.local_variables()
+    initialized_list = []
+    for varIdx in range(len(all_variables)):
+        variable = all_variables[varIdx]
+        varFlag = session.run(tf.is_variable_initialized(variable))
+        if not varFlag:
+            initialized_list.append(variable )
+
+    init_op = tf.variables_initializer(initialized_list, name='init_remaining' )
+    session.run(init_op)
 
     ##############################
     # Restoring and Initialization  DaiQi_add
@@ -169,9 +174,9 @@ def main(config):
 
 
     # Add the ops to initialize variables.
-    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-    # Actually initialize the variables
-    session.run(init_op)
+    # init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+    # # Actually initialize the variables
+    # session.run(init_op)
 
     # Register summary ops.
     train_summary_dir = os.path.join(config['model_dir'], "summary", "train")

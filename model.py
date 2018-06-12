@@ -5,9 +5,6 @@ import tensorflow as tf
 # same parameters.
 import numpy as np
 
-
-
-
 class Model():
     """
     Base class for sequence models.
@@ -81,6 +78,25 @@ class Model():
         """
         raise NotImplementedError('subclasses must override build_network()')
 
+    def get_weighted_logit(self, logits, input_seq_len):
+        # Divide the logits into four groups
+        # Assigned weight is [0.2, 0.4, 0.6, 2.8]
+        batch_size, max_seq_len, num_labels = logits.shape
+        weighted_logit_mask = np.zeros((batch_size, max_seq_len, num_labels), dtype = np.float32)
+
+        for i in range(batch_size):
+            seq_len = input_seq_len[i]
+            
+            Idx_1 = np.int32(np.floor(seq_len/4.0))
+            Idx_2 = 2 * Idx_1
+            Idx_3 = 3 * Idx_1
+            weighted_logit_mask[i, 0:Idx_1, :] = np.float32(0.2)
+            weighted_logit_mask[i, Idx_1:Idx_2, :] = np.float32(0.4)
+            weighted_logit_mask[i, Idx_2:Idx_3, :] = np.float32(0.6)
+            weighted_logit_mask[i, Idx_3:seq_len, :] = np.float32(2.8)
+
+        return weighted_logit_mask
+
     def build_loss(self):
         """
         Calculates classification loss depending on loss type. We are trying to assign a class label to input
@@ -109,6 +125,14 @@ class Model():
             elif self.config['loss_type'] == 'average_loss':
                 # TODO_GX: this is a bug. It is same with above, need to be fixed
                 self.accuracy_logit = tf.reduce_mean(self.logits*self.seq_loss_mask, axis=1)
+            elif self.config['loss_type'] == 'weighted_logit':
+                self.weighted_loss_mask = tf.py_func(lambda x, y: self.get_weighted_logit(x, y),
+                                                [self.logits, self.input_seq_len],
+                                                tf.float32)
+                self.logits = tf.reduce_mean(self.logits*self.weighted_loss_mask, axis=1)
+                # self.original_logits = self.logits
+                # self.logits = tf.reduce_mean(self.weighted_logit*self.seq_loss_mask, axis=1)
+                self.accuracy_logit = self.logits
             else:
                 raise Exception("Invalid loss type")
 
@@ -168,25 +192,29 @@ class CNNModel(Model):
 
         self.input_rgb = placeholders['rgb']
 
-    # def build_network(self):
-    #     """
-    #     Stacks convolutional layers where each layer consists of CNN+Pooling operations.
-    #     """
-    #     with tf.variable_scope( "convolution", reuse=self.reuse, initializer=self.initializer, regularizer=None, custom_getter = super().ema_getter):
-    #         input_layer_ = self.input_layer
-    #         for i, num_filter in enumerate(self.config['num_filters'] ):
-    #             conv_layer = tf.layers.conv2d( inputs=input_layer_,
-    #                                            filters=num_filter,
-    #                                            kernel_size=[self.config['filter_size'][i],
-    #                                                         self.config['filter_size'][i]],
-    #                                            padding="same",
-    #                                            activation=tf.nn.relu )
-    #
-    #             pooling_layer = tf.layers.max_pooling2d(inputs=conv_layer, pool_size=[2, 2], strides=2,
-    #                                                      padding='same' )
-    #             input_layer_ = pooling_layer
-    #
-    #         self.model_output_raw = input_layer_
+    def bn_conv3d(self, input_layer, num_filters, kernel_size, strides, name = None, is_training = True):
+        conv =tf.layers.conv3d(
+                            inputs = input_layer,
+                            filters = num_filters,
+                            kernel_size = 3,
+                            strides=(1, 1, 1),
+                            padding='same',
+                            activation=None, 
+                            name = name
+                            )
+
+        conv_bn = tf.layers.batch_normalization(
+                                        inputs = conv,
+                                        axis=-1,
+                                        momentum=0.99,
+                                        epsilon=0.001, 
+                                        training = is_training,
+                                        name = name
+                                        )
+        
+        output = tf.nn.leaky_relu(conv_bn)
+
+        return output
 
     def build_network(self):
         """
@@ -197,90 +225,50 @@ class CNNModel(Model):
             batch_size, clip_num, frames, height, width, num_channels = self.new_input_layer.shape
             input_layer_ = tf.reshape(self.new_input_layer, [-1, frames, height, width, num_channels])
 
-
-
-
-            conv1 =tf.layers.conv3d(
-                            inputs = input_layer_,
-                            filters = 16 ,
-                            kernel_size = 3,
-                            strides=(1, 1, 1),
-                            padding='same',
-                            # data_format='channels_last',
-                            # dilation_rate=(1, 1, 1),
-                            activation=tf.nn.leaky_relu,
-                )
+            conv1 = self.bn_conv3d(
+                                input_layer = input_layer_,
+                                num_filters = 16,
+                                kernel_size = 3, 
+                                strides = (1,1,1),
+                                is_training = True
+                                )
             pool1 = tf.layers.max_pooling3d(inputs=conv1, pool_size=[1, 2, 2], strides=[1,2,2], padding='same')
 
-            conv2 = tf.layers.conv3d(
-                inputs=pool1,
-                filters=32,
-                kernel_size=3,
-                strides=(1, 1, 1),
-                padding='same',
-                # data_format='channels_last',
-                # dilation_rate=(1, 1, 1),
-                activation=tf.nn.leaky_relu,
-            )
+            conv2 = self.bn_conv3d(
+                                input_layer = pool1,
+                                num_filters = 32,
+                                kernel_size = 3, 
+                                strides = (1,1,1),
+                                is_training = True
+                                )
             pool2 = tf.layers.max_pooling3d(inputs=conv2, pool_size=[1, 2, 2], strides=[1, 2, 2], padding='same')
 
-            conv3 = tf.layers.conv3d(
-                inputs=pool2,
-                filters=64,
-                kernel_size=3,
-                strides=(1, 1, 1),
-                padding='same',
-                activation=tf.nn.leaky_relu,
-            )
+            conv3 = self.bn_conv3d(
+                                input_layer = pool2,
+                                num_filters = 64,
+                                kernel_size = 3, 
+                                strides = (1,1,1),
+                                is_training = True
+                                )
+            pool3 = tf.layers.max_pooling3d(inputs=conv3, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same')
+            
+            conv4 = self.bn_conv3d(
+                                input_layer = pool3,
+                                num_filters = 128,
+                                kernel_size = 3, 
+                                strides = (1,1,1),
+                                is_training = True
+                                )
+            pool4 = tf.layers.max_pooling3d(inputs=conv4, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same')
 
-            conv3 = tf.layers.conv3d(
-                inputs=conv3,
-                filters=64,
-                kernel_size=3,
-                strides=(1, 1, 1),
-                padding='same',
-                activation=tf.nn.relu,
-            )
-            pool3 = tf.layers.max_pooling3d(inputs=conv3, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
-
-            conv4 = tf.layers.conv3d(
-                inputs=pool3,
-                filters=128,
-                kernel_size=3,
-                strides=(1, 1, 1),
-                padding='same',
-                activation=tf.nn.leaky_relu,
-            )
-
-            conv4 = tf.layers.conv3d(
-                inputs=conv4,
-                filters=128,
-                kernel_size=3,
-                strides=(1, 1, 1),
-                padding='same',
-                activation=tf.nn.relu,
-            )
-
-            pool4 = tf.layers.max_pooling3d(inputs=conv4, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
-
-            conv5 = tf.layers.conv3d(
-                inputs=pool4,
-                filters=256,
-                kernel_size=3,
-                strides=(1, 1, 1),
-                padding='same',
-                activation=tf.nn.leaky_relu,
-            )
-            #
-            conv5 = tf.layers.conv3d(
-                inputs=conv5,
-                filters=256,
-                kernel_size=3,
-                strides=(1, 1, 1),
-                padding='same',
-                activation=tf.nn.relu,
-            )
-            pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
+            conv5 = self.bn_conv3d(
+                                input_layer = pool4,
+                                num_filters = 256,
+                                kernel_size = 3, 
+                                strides = (1,1,1),
+                                is_training = True
+                                )
+            pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same')
 
             self.model_output_raw = pool5
 
