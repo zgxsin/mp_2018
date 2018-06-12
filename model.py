@@ -188,6 +188,36 @@ class CNNModel(Model):
     #
     #         self.model_output_raw = input_layer_
 
+
+
+
+
+    def spatial_dropout(x, keep_prob, seed=1234):
+        # x is a convnet activation with shape BxWxHxF where F is the
+        # number of feature maps for that layer
+        # keep_prob is the proportion of feature maps we want to keep
+
+        # get the batch size and number of feature maps
+        num_feature_maps = [tf.shape( x )[0], tf.shape( x )[3]]
+
+        # get some uniform noise between keep_prob and 1 + keep_prob
+        random_tensor = keep_prob
+        random_tensor += tf.random_uniform( num_feature_maps,
+                                            seed=seed,
+                                            dtype=x.dtype )
+
+        # if we take the floor of this, we get a binary matrix where
+        # (1-keep_prob)% of the values are 0 and the rest are 1
+        binary_tensor = tf.floor( random_tensor )
+
+        # Reshape to multiply our feature maps by this tensor correctly
+        binary_tensor = tf.reshape( binary_tensor,
+                                    [-1, 1, 1, tf.shape( x )[3]] )
+        # Zero out feature maps where appropriate; scale up to compensate
+        ret = tf.div(x, keep_prob ) * binary_tensor
+        return ret
+
+
     def build_network(self):
         """
         Stacks convolutional layers where each layer consists of CNN+Pooling operations.
@@ -196,10 +226,7 @@ class CNNModel(Model):
             # frames is 8, is a constant
             batch_size, clip_num, frames, height, width, num_channels = self.new_input_layer.shape
             input_layer_ = tf.reshape(self.new_input_layer, [-1, frames, height, width, num_channels])
-
-
-
-
+            dimension_first = tf.shape(input_layer_)[0]
             conv1 =tf.layers.conv3d(
                             inputs = input_layer_,
                             filters = 16 ,
@@ -210,6 +237,9 @@ class CNNModel(Model):
                             # dilation_rate=(1, 1, 1),
                             activation=tf.nn.leaky_relu,
                 )
+            # dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
+            conv1 = tf.nn.dropout(conv1, keep_prob=0.9, noise_shape=[dimension_first, frames, 1, 1, 16], name="3dconv1_dropout")
+
             pool1 = tf.layers.max_pooling3d(inputs=conv1, pool_size=[1, 2, 2], strides=[1,2,2], padding='same')
 
             conv2 = tf.layers.conv3d(
@@ -222,6 +252,9 @@ class CNNModel(Model):
                 # dilation_rate=(1, 1, 1),
                 activation=tf.nn.leaky_relu,
             )
+
+            conv2 = tf.nn.dropout( conv2, keep_prob=0.9, noise_shape=[dimension_first, frames, 1, 1, 32],
+                                   name="3dconv2_dropout" )
             pool2 = tf.layers.max_pooling3d(inputs=conv2, pool_size=[1, 2, 2], strides=[1, 2, 2], padding='same')
 
             conv3 = tf.layers.conv3d(
@@ -232,6 +265,9 @@ class CNNModel(Model):
                 padding='same',
                 activation=tf.nn.leaky_relu,
             )
+
+            conv3 = tf.nn.dropout( conv3, keep_prob=0.9, noise_shape=[dimension_first, frames, 1, 1, 64],
+                                   name="3dconv3_dropout" )
 
             # conv3 = tf.layers.conv3d(
             #     inputs=conv3,
@@ -253,6 +289,9 @@ class CNNModel(Model):
                 activation=tf.nn.leaky_relu,
             )
 
+            conv4 = tf.nn.dropout( conv4, keep_prob=0.9, noise_shape=[dimension_first, np.int32(frames.value/2), 1, 1, 128],
+                                   name="3dconv4_dropout" )
+
             # conv4 = tf.layers.conv3d(
             #     inputs=conv4,
             #     filters=128,
@@ -272,6 +311,9 @@ class CNNModel(Model):
                 padding='same',
                 activation=tf.nn.leaky_relu,
             )
+
+            conv5 = tf.nn.dropout( conv5, keep_prob=0.9, noise_shape=[dimension_first, np.int32(frames.value/4), 1, 1, 256],
+                                   name="3dconv5_dropout" )
             # #
             # conv5 = tf.layers.conv3d(
             #     inputs=conv5,
@@ -351,10 +393,13 @@ class CNNModel(Model):
             self.model_output_flat = tf.reshape(self.model_output_raw, [-1, frames*cnn_height * cnn_width * num_filters] )
             self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=1024, activation=tf.nn.leaky_relu)
 
+            # this function applies scaling automatically
             dropout_layer = tf.layers.dropout(inputs=self.model_output_flat, rate=self.config['dropout_rate'],
                                                training=self.is_training)
 
+
             self.model_output_flat = tf.layers.dense(inputs=dropout_layer, units= 512, activation=tf.nn.leaky_relu)
+
 
             self.model_output = tf.reshape(self.model_output_flat, [batch_size, -1, 512])
             # normalize the features

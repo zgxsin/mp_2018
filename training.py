@@ -74,6 +74,8 @@ def main(config):
         ##############
         # Optimization
         ##############
+        #   decayed_learning_rate = learning_rate *
+        #                  decay_rate ^ (global_step / decay_steps)
         if config['learning_rate_type'] == 'exponential':
             learning_rate = tf.train.exponential_decay(config['learning_rate'],
                                                        global_step=global_step,
@@ -144,11 +146,11 @@ def main(config):
     # Load Previous Model and initialize weights
     restored_variables = tf.trainable_variables()
     # change the dence layer
-    del restored_variables[12:16]
+    # del restored_variables[12:16]
 
     restore_saver = tf.train.Saver(var_list=restored_variables )
     # latest_checkpoint(checkpoint_dir, latest_filename=None)
-    checkpoint_path = tf.train.latest_checkpoint("/Users/zhou/Desktop/MP-RemoteFile/lstm1_512_cnn5_drop3_5e4_avg_logit_1527722646")
+    checkpoint_path = tf.train.latest_checkpoint("/cluster/home/guzhou/pretrain_checkpoint_mp2018")
     # checkpoint_path = tf.train.latest_checkpoint(
     #     " /cluster/home/guzhou/NewMP10/runs/lstm1_512_cnn5_drop3_5e4_avg_logit_1528668704/for_pretrain")
     print('Restoring from ', checkpoint_path)
