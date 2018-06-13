@@ -351,11 +351,11 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         #                    elems=seq_rgb,
         #                    dtype=tf.float32,
         #                    back_prop=False)
-        seq_skeleton = tf.py_func( lambda x: img_preprocessing_op( x ),
+        seq_skeleton = tf.py_func(lambda x: img_preprocessing_op( x ),
                                    [seq_skeleton],
                                    tf.float32,
                                    )
-        seq_skeleton.set_shape( [None, 80, 80, 3] )
+        seq_skeleton.set_shape([None, 80, 80, 3] )
 
 
 
@@ -371,15 +371,18 @@ def read_and_decode_sequence_test_data(filename_queue, config):
 
         single_sample = tf.concat([seq_rgb, seq_skeleton, seq_depth], axis=3 )
 
-        single_sample = tf.map_fn(lambda x: tf.image.central_crop(x,central_fraction=0.7),
+        single_sample = tf.map_fn(lambda x: tf.image.resize_image_with_crop_or_pad(x, target_height=config['img_height_crop'], target_width=config['img_width_crop']),
                                   elems=single_sample,
                                   dtype=tf.float32,
                                   back_prop=False)
 
+
+        single_sample.set_shape([None, config['img_height_crop'], config['img_width_crop'], 7])
+
         seq_rgb = single_sample[:, :, :, 0:3]
         seq_skeleton = single_sample[:, :, :, 3:6]
         seq_depth = single_sample[:, :, :, 6]
-        seq_depth = tf.reshape( seq_depth, (-1, config['img_height'], config['img_height'], 1) )
+        seq_depth = tf.reshape(seq_depth, (-1, config['img_height_crop'], config['img_width_crop'], 1) )
 
 
         # normaliztion for all inputs
