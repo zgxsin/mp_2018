@@ -43,11 +43,11 @@ def main(config):
 
 
     # add normalized depth info to the CNN training data, replace rgb with mask_image
-    # training_input_layer = tf.concat([training_placeholders['rgb'],  training_placeholders['skeleton'],training_placeholders['depth']],4)
-    # validation_input_layer = tf.concat([validation_placeholders['rgb'], validation_placeholders['skeleton'],validation_placeholders['depth']], 4 )
+    training_input_layer = tf.concat([training_placeholders['rgb'],  training_placeholders['skeleton'],training_placeholders['depth']],4)
+    validation_input_layer = tf.concat([validation_placeholders['rgb'], validation_placeholders['skeleton'],validation_placeholders['depth']], 4 )
     
-    training_input_layer = tf.concat([training_placeholders['rgb'],training_placeholders['depth']],4)
-    validation_input_layer = tf.concat([validation_placeholders['rgb'],validation_placeholders['depth']], 4)
+    # training_input_layer = tf.concat([training_placeholders['rgb'],training_placeholders['depth']],4)
+    # validation_input_layer = tf.concat([validation_placeholders['rgb'],validation_placeholders['depth']], 4)
     ##################
     # Training Model
     ##################
@@ -148,12 +148,16 @@ def main(config):
     # Load Previous Model and initialize weights
     restored_variables = tf.trainable_variables()
     # change the dence layer
-#    del restored_variables[10:16]
+    # [6 7 10 11 14 15 18 19 20]
+    restored_variables =  [ v  for v in restored_variables if 'gamma' not in v.name]
+    restored_variables = [v for v in restored_variables if 'beta' not in v.name]
+    del restored_variables[10:16]
+
     restore_saver = tf.train.Saver(var_list=restored_variables )
     # latest_checkpoint(checkpoint_dir, latest_filename=None)
-    checkpoint_path = tf.train.latest_checkpoint("/cluster/home/guzhou/pretrain_checkpoint_mp2018")
-   # checkpoint_path = tf.train.latest_checkpoint(
-   #    "/Users/zhou/Desktop/MP-RemoteFile/for_pretrain")
+    # checkpoint_path = tf.train.latest_checkpoint("/cluster/home/guzhou/pretrain_checkpoint_mp2018")
+    checkpoint_path = tf.train.latest_checkpoint(
+      "/Users/zhou/Desktop/MP-RemoteFile/for_pretrain")
     print('Restoring from ', checkpoint_path)
     restore_saver.restore(session, checkpoint_path )
 
