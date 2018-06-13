@@ -145,7 +145,6 @@ def main(config):
     ##############################
     # Restoring and Initialization  DaiQi_add
     ##############################
-    '''
     # Load Previous Model and initialize weights
     restored_variables = tf.trainable_variables()
     # change the dence layer
@@ -169,7 +168,6 @@ def main(config):
 
     init_op = tf.variables_initializer(initialized_list, name='init_remaining' )
     session.run(init_op)
-    '''
 
     ##############################
     # Restoring and Initialization  DaiQi_add
@@ -177,9 +175,9 @@ def main(config):
 
 
     # Add the ops to initialize variables.
-    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-    # # Actually initialize the variables
-    session.run(init_op)
+#    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+#    # # Actually initialize the variables
+#    session.run(init_op)
 
     # Register summary ops.
     train_summary_dir = os.path.join(config['model_dir'], "summary", "train")
