@@ -43,9 +43,11 @@ def main(config):
 
 
     # add normalized depth info to the CNN training data, replace rgb with mask_image
-    training_input_layer = tf.concat([training_placeholders['rgb'],  training_placeholders['skeleton'],training_placeholders['depth']],4)
-    validation_input_layer = tf.concat([validation_placeholders['rgb'], validation_placeholders['skeleton'],validation_placeholders['depth']], 4 )
-
+    # training_input_layer = tf.concat([training_placeholders['rgb'],  training_placeholders['skeleton'],training_placeholders['depth']],4)
+    # validation_input_layer = tf.concat([validation_placeholders['rgb'], validation_placeholders['skeleton'],validation_placeholders['depth']], 4 )
+    
+    training_input_layer = tf.concat([training_placeholders['rgb'],training_placeholders['depth']],4)
+    validation_input_layer = tf.concat([validation_placeholders['rgb'],validation_placeholders['depth']], 4)
     ##################
     # Training Model
     ##################
@@ -143,7 +145,7 @@ def main(config):
     ##############################
     # Restoring and Initialization  DaiQi_add
     ##############################
-
+    '''
     # Load Previous Model and initialize weights
     restored_variables = tf.trainable_variables()
     # change the dence layer
@@ -167,6 +169,7 @@ def main(config):
 
     init_op = tf.variables_initializer(initialized_list, name='init_remaining' )
     session.run(init_op)
+    '''
 
     ##############################
     # Restoring and Initialization  DaiQi_add
@@ -174,9 +177,9 @@ def main(config):
 
 
     # Add the ops to initialize variables.
-    # init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
     # # Actually initialize the variables
-    # session.run(init_op)
+    session.run(init_op)
 
     # Register summary ops.
     train_summary_dir = os.path.join(config['model_dir'], "summary", "train")
