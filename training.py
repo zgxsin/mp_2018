@@ -61,7 +61,7 @@ def main(config):
         cnn_layer_keep_rate = tf.placeholder_with_default(1.0, shape=(), name="cnn_layer_keep_rate")
         cnnModel = CNNModel(config=config['cnn'],
                             placeholders=training_placeholders,
-                            mode='training',keep_rate=cnn_layer_keep_rate ,ema= ema)
+                            mode='training', keep_rate=cnn_layer_keep_rate ,ema= ema)
         cnnModel.build_graph(input_layer=training_input_layer)
 
         trainModel = RNNModel(config=config['rnn'],
@@ -115,7 +115,7 @@ def main(config):
 
     # apply moving average
     ema_op = ema.apply( tf.trainable_variables() )
-    with tf.control_dependencies( [train_op1, ema_op] ):
+    with tf.control_dependencies([train_op1, ema_op] ):
         train_op = tf.no_op( name="train_ema" )
     ##############
     # Monitoring

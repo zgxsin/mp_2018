@@ -248,7 +248,7 @@ class CNNModel(Model):
                                 num_filters = 16,
                                 kernel_size = 3, 
                                 strides = (1,1,1),
-                                is_training = self.is_training
+                                # is_training = self.is_training
                                 )
             conv1 = tf.nn.dropout(conv1, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, 16], name="3dconv1_dropout")
             pool1 = tf.layers.max_pooling3d(inputs=conv1, pool_size=[1, 2, 2], strides=[1,2,2], padding='same')
@@ -258,7 +258,7 @@ class CNNModel(Model):
                                 num_filters = 32,
                                 kernel_size = 3, 
                                 strides = (1,1,1),
-                                is_training = self.is_training
+                                # is_training = self.is_training
                                 )
             conv2 = tf.nn.dropout( conv2, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, 32],
                                    name="3dconv2_dropout" )
@@ -269,7 +269,7 @@ class CNNModel(Model):
                                 num_filters = 64,
                                 kernel_size = 3, 
                                 strides = (1,1,1),
-                                is_training = self.is_training
+                                # is_training = self.is_training
                                 )
             conv3 = tf.nn.dropout( conv3, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, 64],
                                    name="3dconv3_dropout" )
@@ -280,7 +280,7 @@ class CNNModel(Model):
                                 num_filters = 128,
                                 kernel_size = 3, 
                                 strides = (1,1,1),
-                                is_training = self.is_training
+                                # is_training = self.is_training
                                 )
             conv4 = tf.nn.dropout( conv4, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/2), 1, 1, 128],
                                    name="3dconv4_dropout")
@@ -291,9 +291,9 @@ class CNNModel(Model):
                                 num_filters = 256,
                                 kernel_size = 3, 
                                 strides = (1,1,1),
-                                is_training = self.is_training
+                                # is_training = self.is_training
                                 )
-            conv5 = tf.nn.dropout( conv5, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/4), 1, 1, 256],
+            conv5 = tf.nn.dropout(conv5, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/4), 1, 1, 256],
                                    name="3dconv5_dropout" )
             pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
