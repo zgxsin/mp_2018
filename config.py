@@ -26,11 +26,13 @@ config['num_validation_samples'] = 1765
 config['num_training_samples'] = 5722
 
 # Hyper-parameters and training configuration.
-config['batch_size'] = 20
+config['batch_size'] = 16
 # config['batch_size'] = 16   ## modified by GX
 config['learning_rate'] = 5e-5
 # Learning rate is annealed exponentially in 'exponential' case. Don't forget to change annealing configuration in the code.
-config['learning_rate_type'] = 'exponential' #'fixed' or 'exponential'
+#config['learning_rate_type'] = 'exponential' #'fixed' or 'exponential' or 'decay_by_epochs'
+config['learning_rate_type'] = 'decay_by_epochs'
+
 config['regularization_rate'] = 0.0001 # this is the rate for L2 or L1 regularizer
 config['num_steps_per_epoch'] = int(config['num_training_samples']/config['batch_size'])
 
@@ -45,7 +47,7 @@ config['print_every_step'] = 50
 # (1) 'last_logit': calculate loss by using only the last step prediction.
 # (2) 'average_logit': calculate loss by using average of predictions across all steps.
 # (3) 'average_loss': calculate loss for each time-step by using the same sequence label.
-config['loss_type'] = 'average_logit' # 'last_logit', 'average_logit', 'average_loss'.
+#config['loss_type'] = 'average_logit' # 'last_logit', 'average_logit', 'average_loss'.
 # config['loss_type'] = 'last_logit' # GX_modified
 config['loss_type'] = 'weighted_logit'
 

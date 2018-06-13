@@ -79,6 +79,7 @@ def main(config):
         ##############
         #   decayed_learning_rate = learning_rate *
         #                  decay_rate ^ (global_step / decay_steps)
+
         if config['learning_rate_type'] == 'exponential':
             learning_rate = tf.train.exponential_decay(config['learning_rate'],
                                                        global_step=global_step,
@@ -87,6 +88,13 @@ def main(config):
                                                        staircase=False)
         elif config['learning_rate_type'] == 'fixed':
             learning_rate = config['learning_rate']
+
+        elif config['learning_rate_type'] == 'decay_by_epochs':
+            learning_rate = 0.003
+            if global_step%(config['num_steps_per_epoch']*4) == 0:
+                learning_rate /= 10
+
+
         else:
             raise Exception("Invalid learning rate type")
 
