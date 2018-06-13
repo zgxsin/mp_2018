@@ -101,7 +101,7 @@ def img_preprocessing_op_map(image_op):
 
         return image_op_post
 
-def random_crop_rotation_scaling(image_op):
+def random_crop_rotation_scaling(image_op, config):
     """
     Creates preprocessing operations that are going to be applied on a single frame.
 
@@ -115,7 +115,7 @@ def random_crop_rotation_scaling(image_op):
     with tf.name_scope("img_preprocessing3"):
         # first, crop the images
 
-        image_op = tf.random_crop(image_op, size=[tf.shape(image_op)[0], 56, 56, tf.shape(image_op)[3]])
+        image_op = tf.random_crop(image_op, size=[tf.shape(image_op)[0],config['img_height_crop'], config['img_width_crop'], tf.shape(image_op)[3]])
         # todo: radian or ?
         # second, rotate the images
         angles = math.pi/180 *int(np.random.uniform(-15,16))
@@ -252,7 +252,7 @@ def read_and_decode_sequence(filename_queue, config):
         # for the convinience of map_fun
         single_sample = tf.expand_dims(single_sample, axis=0 )
 
-        single_sample = tf.map_fn(lambda x:random_crop_rotation_scaling(x),
+        single_sample = tf.map_fn(lambda x:random_crop_rotation_scaling(x, config),
                                     elems=single_sample,
                                     dtype = tf.float32,
                                     back_prop= False
@@ -260,14 +260,14 @@ def read_and_decode_sequence(filename_queue, config):
 
         single_sample = tf.squeeze(single_sample, [0])
 
-        single_sample.set_shape([None, 56, 56, 7])
+        single_sample.set_shape([None, config['img_height_crop'], config['img_width_crop'], 7])
 
 
 
         seq_rgb = single_sample[:,:,:,0:3]
         seq_skeleton = single_sample[:,:,:,3:6]
         seq_depth = single_sample[:,:,:,6]
-        seq_depth = tf.reshape(seq_depth,(-1, 56, 56, 1))
+        seq_depth = tf.reshape(seq_depth,(-1, config['img_height_crop'], config['img_width_crop'], 1))
 
 
         ## normalize:
@@ -379,7 +379,7 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         seq_rgb = single_sample[:, :, :, 0:3]
         seq_skeleton = single_sample[:, :, :, 3:6]
         seq_depth = single_sample[:, :, :, 6]
-        seq_depth = tf.reshape( seq_depth, (-1, 56, 56, 1) )
+        seq_depth = tf.reshape( seq_depth, (-1, config['img_height'], config['img_height'], 1) )
 
 
         # normaliztion for all inputs

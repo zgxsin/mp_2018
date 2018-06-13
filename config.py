@@ -56,6 +56,10 @@ config['inputs']['num_epochs'] = config['num_epochs']
 config['inputs']['batch_size'] = config['batch_size']
 config['inputs']['img_height'] = 80  #Input size.
 config['inputs']['img_width'] = 80
+
+# reshape data size:
+config['inputs']['img_height_crop'] = 64  #Input size.
+config['inputs']['img_width_crop'] = 64
 config['inputs']['img_num_channels'] = 3
 config['inputs']['skeleton_size'] = 180
 ## setting the 3dcnn frame lenth and overlap
