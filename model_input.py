@@ -245,22 +245,6 @@ def read_and_decode_sequence(filename_queue, config):
 
         single_sample = tf.concat([seq_rgb, seq_skeleton, seq_depth], axis=3)
 
-        # image_extracted = tf.map_fn(lambda x: tf.image.random_flip_left_right(x, seed=6),
-        #                              elems=image_extracted,
-        #                              dtype=tf.float32,
-        #                              back_prop=False
-        #                              )
-
-
-
-
-        # Normalize RGB images before feeding into the model.
-        # Here we calculate statistics locally (i.e., per sequence sample). You can iterate over the whole dataset once
-        # and calculate global statistics for later use.
-        # rgb_mean, rgb_std = get_mean_and_std(seq_rgb, axis=[0, 1, 2, 3], keepdims=True)
-        # seq_rgb = (seq_rgb - rgb_mean)/rgb_std
-
-
         single_sample = tf.py_func(lambda x: add_salt_pepper_noise(x),
                              [single_sample],
                              tf.float32,)
@@ -279,24 +263,24 @@ def read_and_decode_sequence(filename_queue, config):
         single_sample.set_shape([None, 56, 56, 7])
 
 
-        # skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton[:, 12:68, 20:60, :], axis=[0, 1, 2, 3],
-        #                                                 keepdims=True )
-        # seq_skeleton = (seq_skeleton[:, 12:68, 20:60, :] - skeleton_mean) / skeleton_std
 
-        # seq_skeleton = tf.map_fn( lambda x: img_preprocessing_op_map( x ),
-        #                           elems=seq_skeleton,
-        #                           dtype=tf.float32,
-        #                           back_prop=False
-        #                           )
-
-        # normalize tp [-1,1]
-        # seq_depth = (seq_depth - 128) / 128
-        # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
-        # the same format.
         seq_rgb = single_sample[:,:,:,0:3]
         seq_skeleton = single_sample[:,:,:,3:6]
         seq_depth = single_sample[:,:,:,6]
         seq_depth = tf.reshape(seq_depth,(-1, 56, 56, 1))
+
+
+        ## normalize:
+        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton, axis=[0, 1, 2, 3],
+                                                        keepdims=True )
+        seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
+
+        rgb_mean, rgb_std = get_mean_and_std( seq_rgb, axis=[0, 1, 2, 3], keepdims=True )
+        seq_rgb = (seq_rgb - rgb_mean) / rgb_std
+
+        depth_mean, depth_std = get_mean_and_std( seq_depth, axis=[0, 1, 2, 3], keepdims=True )
+        seq_depth = (seq_depth - depth_mean) / depth_std
+
         sample = {}
         sample['rgb'] = seq_rgb
         sample['depth'] = seq_depth
@@ -373,6 +357,10 @@ def read_and_decode_sequence_test_data(filename_queue, config):
                                    )
         seq_skeleton.set_shape( [None, 80, 80, 3] )
 
+
+
+
+
         mask_result = tf.py_func( lambda x: x > 150,
                                   [seq_segmentation],
                                   tf.bool,
@@ -392,6 +380,22 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         seq_skeleton = single_sample[:, :, :, 3:6]
         seq_depth = single_sample[:, :, :, 6]
         seq_depth = tf.reshape( seq_depth, (-1, 56, 56, 1) )
+
+
+        # normaliztion for all inputs
+        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton, axis=[0, 1, 2, 3],
+                                                        keepdims=True )
+        seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
+
+
+
+        rgb_mean, rgb_std = get_mean_and_std( seq_rgb, axis=[0, 1, 2, 3], keepdims=True )
+        seq_rgb = (seq_rgb - rgb_mean) / rgb_std
+
+        depth_mean, depth_std = get_mean_and_std( seq_depth, axis=[0, 1, 2, 3], keepdims=True )
+        seq_depth = (seq_depth - depth_mean) / depth_std
+
+
 
         # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
         # the same format.
