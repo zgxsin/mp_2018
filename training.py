@@ -147,12 +147,12 @@ def main(config):
     # Load Previous Model and initialize weights
     restored_variables = tf.trainable_variables()
     # change the dence layer
-    del restored_variables[10:16]
+#    del restored_variables[10:16]
     restore_saver = tf.train.Saver(var_list=restored_variables )
     # latest_checkpoint(checkpoint_dir, latest_filename=None)
-    # checkpoint_path = tf.train.latest_checkpoint("/cluster/home/guzhou/pretrain_checkpoint_mp2018")
-    checkpoint_path = tf.train.latest_checkpoint(
-       "/Users/zhou/Desktop/MP-RemoteFile/for_pretrain")
+    checkpoint_path = tf.train.latest_checkpoint("/cluster/home/guzhou/pretrain_checkpoint_mp2018")
+   # checkpoint_path = tf.train.latest_checkpoint(
+   #    "/Users/zhou/Desktop/MP-RemoteFile/for_pretrain")
     print('Restoring from ', checkpoint_path)
     restore_saver.restore(session, checkpoint_path )
 
