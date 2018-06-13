@@ -148,7 +148,7 @@ class Model():
             with tf.name_scope("cross_entropy_loss"):
 
                 self.reg_loss = self.config['regularization_rate']*tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()
-                                                         if 'bias' not in v.name])
+                                                         if 'kernel' in v.name])
 
                 if self.config['loss_type'] == 'average_loss':
                     # Todo: check further
@@ -210,13 +210,15 @@ class CNNModel(Model):
         self.prob = keep_rate
 
     def bn_conv3d(self, input_layer, num_filters, kernel_size, strides, name = None, is_training = True):
+
         conv =tf.layers.conv3d(
                             inputs = input_layer,
                             filters = num_filters,
                             kernel_size = kernel_size,
                             strides=strides,
                             padding='same',
-                            activation=None, 
+                            # activation=tf.nn.leaky_relu,
+                            activation=None,
                             name = name
                             )
 
@@ -224,13 +226,14 @@ class CNNModel(Model):
                                         inputs = conv,
                                         axis=-1,
                                         momentum=0.9,
-                                        epsilon=0.001, 
+                                        epsilon=0.001,
                                         training = is_training,
                                         name = name
                                         )
         
         output = tf.nn.leaky_relu(conv_bn)
 
+        # output = conv
         return output
 
     def build_network(self):
@@ -245,57 +248,57 @@ class CNNModel(Model):
 
             conv1 = self.bn_conv3d(
                                 input_layer = input_layer_,
-                                num_filters = 16,
+                                num_filters = self.config['num_filters'][0],
                                 kernel_size = 3, 
                                 strides = (1,1,1),
                                 # is_training = self.is_training
                                 )
-            conv1 = tf.nn.dropout(conv1, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, 16], name="3dconv1_dropout")
+            conv1 = tf.nn.dropout(conv1, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][0]], name="3dconv1_dropout")
             pool1 = tf.layers.max_pooling3d(inputs=conv1, pool_size=[1, 2, 2], strides=[1,2,2], padding='same')
 
             conv2 = self.bn_conv3d(
                                 input_layer = pool1,
-                                num_filters = 32,
+                                num_filters = self.config['num_filters'][1],
                                 kernel_size = 3, 
                                 strides = (1,1,1),
                                 # is_training = self.is_training
                                 )
-            conv2 = tf.nn.dropout( conv2, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, 32],
+            conv2 = tf.nn.dropout( conv2, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][1]],
                                    name="3dconv2_dropout" )
             pool2 = tf.layers.max_pooling3d(inputs=conv2, pool_size=[1, 2, 2], strides=[1, 2, 2], padding='same')
 
             conv3 = self.bn_conv3d(
                                 input_layer = pool2,
-                                num_filters = 64,
+                                num_filters = self.config['num_filters'][2],
                                 kernel_size = 3, 
                                 strides = (1,1,1),
                                 # is_training = self.is_training
                                 )
-            conv3 = tf.nn.dropout( conv3, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, 64],
+            conv3 = tf.nn.dropout( conv3, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][2]],
                                    name="3dconv3_dropout" )
             pool3 = tf.layers.max_pooling3d(inputs=conv3, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
             conv4 = self.bn_conv3d(
                                 input_layer = pool3,
-                                num_filters = 128,
+                                num_filters = self.config['num_filters'][3],
                                 kernel_size = 3, 
                                 strides = (1,1,1),
                                 # is_training = self.is_training
                                 )
-            conv4 = tf.nn.dropout( conv4, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/2), 1, 1, 128],
+            conv4 = tf.nn.dropout( conv4, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/2), 1, 1, self.config['num_filters'][3]],
                                    name="3dconv4_dropout")
             pool4 = tf.layers.max_pooling3d(inputs=conv4, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
             conv5 = self.bn_conv3d(
                                 input_layer = pool4,
-                                num_filters = 256,
+                                num_filters = self.config['num_filters'][4],
                                 kernel_size = 3, 
                                 strides = (1,1,1),
                                 # is_training = self.is_training
                                 )
-            conv5 = tf.nn.dropout(conv5, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/4), 1, 1, 256],
+            conv5 = tf.nn.dropout(conv5, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/4), 1, 1, self.config['num_filters'][4]],
                                    name="3dconv5_dropout" )
-            pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
+            pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same')
 
             self.model_output_raw = pool5
 
@@ -332,14 +335,6 @@ class CNNModel(Model):
             # frame is regarded as a separate sample. We transform [batch_size, seq_len, height, width, num_channels] to
             # [batch_size*seq_len, height, width, num_channels]
             batch_size, seq_len, height, width, num_channels = self.input_layer.shape
-            # non_temporal_input_dims = [-1, height, width, num_channels]
-            # self.input_layer = tf.reshape(self.input_layer, non_temporal_input_dims)
-
-            # seq_len_array = tf.range(0, seq_len.value)
-            # fist_index = seq_len_array[0:seq_len:8]
-            # second_index = seq_len_array[16:seq_len:8]
-            # length = tf.minimum(tf.size(fist_index), tf.size(second_index))
-
 
             self.new_input_layer = tf.py_func(lambda x: self.reshape_input_layer(x),
                                                 [self.input_layer],
@@ -363,17 +358,17 @@ class CNNModel(Model):
             # Densely connected layer with <num_hidden_units> output neurons.
             # Output Tensor Shape: [batch_size, num_hidden_units]
             self.model_output_flat = tf.reshape(self.model_output_raw, [-1, frames*cnn_height * cnn_width * num_filters] )
-            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=1024, activation=tf.nn.leaky_relu)
+            self.model_output_flat = tf.layers.dense(inputs=self.model_output_flat, units=self.config['num_hidden_units1'], activation=tf.nn.leaky_relu)
 
             # this function applies scaling automatically
             dropout_layer = tf.layers.dropout(inputs=self.model_output_flat, rate=self.config['dropout_rate'],
                                                training=self.is_training)
 
 
-            self.model_output_flat = tf.layers.dense(inputs=dropout_layer, units= 512, activation=tf.nn.leaky_relu)
+            self.model_output_flat = tf.layers.dense(inputs=dropout_layer, units= self.config['num_hidden_units2'], activation=tf.nn.leaky_relu)
 
 
-            self.model_output = tf.reshape(self.model_output_flat, [batch_size, -1, 512])
+            self.model_output = tf.reshape(self.model_output_flat, [batch_size, -1, self.config['num_hidden_units2']])
             # normalize the features
             # self.model_output = tf.nn.l2_normalize(self.model_output, axis =2)
 
