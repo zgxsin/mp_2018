@@ -116,7 +116,6 @@ def random_crop_rotation_scaling(image_op, config):
         # first, crop the images
 
         image_op = tf.random_crop(image_op, size=[tf.shape(image_op)[0],config['img_height_crop'], config['img_width_crop'], tf.shape(image_op)[3]])
-        # todo: radian or ?
         # second, rotate the images
         angles = math.pi/180 *int(np.random.uniform(-15,16))
         # print(angles)
