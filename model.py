@@ -138,7 +138,7 @@ class Model():
             elif self.config['loss_type'] == 'weighted_logit':
                 self.weighted_loss_mask = tf.py_func(lambda x, y: self.get_weighted_logit(x, y),
                                                                 [self.logits, self.input_clip_len], tf.float32 )
-                self.logits = tf.reduce_mean( self.logits * self.weighted_loss_mask, axis=1 )
+                self.logits = tf.reduce_mean(self.logits * self.weighted_loss_mask, axis=1)*tf.to_float(tf.shape(self.weighted_loss_mask)[1])
                 self.accuracy_logit = self.logits
 
             else:

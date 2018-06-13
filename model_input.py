@@ -396,7 +396,7 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         seq_rgb = (seq_rgb - rgb_mean) / rgb_std
 
         depth_mean, depth_std = get_mean_and_std( seq_depth, axis=[0, 1, 2, 3], keepdims=True )
-        seq_depth = (seq_depth - depth_mean) / depth_std
+        seq_depth = (seq_depth - depth_mean) /depth_std
 
 
 
