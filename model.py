@@ -84,6 +84,28 @@ class Model():
         """
         raise NotImplementedError('subclasses must override build_network()')
 
+
+
+    def get_weighted_logit(self, logits, input_clip_len):
+          # Divide the logits into four groups
+          # Assigned weight is [0.2, 0.4, 0.6, 2.8]
+        batch_size, max_clip_len, num_labels = logits.shape
+        weighted_logit_mask = np.zeros(shape=(batch_size, max_clip_len, num_labels), dtype=np.float32 )
+
+
+        for i in range(batch_size):
+            clip_len = input_clip_len[i]
+            Idx_1 = np.int32(np.floor(clip_len/4))
+            Idx_2 = 2 * Idx_1
+            Idx_3 = 3 * Idx_1
+            weighted_logit_mask[i, 0:Idx_1, :] = np.float32( 0.1 )
+            weighted_logit_mask[i, Idx_1:Idx_2, :] = np.float32(0.2)
+            weighted_logit_mask[i, Idx_2:Idx_3, :] = np.float32(0.3)
+            weighted_logit_mask[i, Idx_3:clip_len, :] = np.float32(0.4)
+
+
+        return weighted_logit_mask
+
     def build_loss(self):
         """
         Calculates classification loss depending on loss type. We are trying to assign a class label to input
@@ -112,6 +134,13 @@ class Model():
             elif self.config['loss_type'] == 'average_loss':
                 # TODO_GX: this is a bug. It is same with above, need to be fixed
                 self.accuracy_logit = tf.reduce_mean(self.logits*self.seq_loss_mask, axis=1)
+
+            elif self.config['loss_type'] == 'weighted_logit':
+                self.weighted_loss_mask = tf.py_func(lambda x, y: self.get_weighted_logit(x, y),
+                                                                [self.logits, self.input_clip_len], tf.float32 )
+                self.logits = tf.reduce_mean( self.logits * self.weighted_loss_mask, axis=1 )
+                self.accuracy_logit = self.logits
+
             else:
                 raise Exception("Invalid loss type")
 
