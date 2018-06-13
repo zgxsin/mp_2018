@@ -90,7 +90,7 @@ def main(config):
             learning_rate = config['learning_rate']
 
         elif config['learning_rate_type'] == 'decay_by_epochs':
-            learning_rate = 0.003
+            learning_rate = config['learning_rate']
             if global_step%(config['num_steps_per_epoch']*4) == 0:
                 learning_rate /= 10
 
