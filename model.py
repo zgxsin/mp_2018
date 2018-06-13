@@ -210,27 +210,29 @@ class CNNModel(Model):
         self.prob = keep_rate
 
     def bn_conv3d(self, input_layer, num_filters, kernel_size, strides, name = None, is_training = True):
+
         conv =tf.layers.conv3d(
                             inputs = input_layer,
                             filters = num_filters,
                             kernel_size = kernel_size,
                             strides=strides,
                             padding='same',
-                            activation=None, 
+                            activation=tf.nn.leaky_relu,
                             name = name
                             )
-
-        conv_bn = tf.layers.batch_normalization(
-                                        inputs = conv,
-                                        axis=-1,
-                                        momentum=0.9,
-                                        epsilon=0.001, 
-                                        training = is_training,
-                                        name = name
-                                        )
+        #
+        # conv_bn = tf.layers.batch_normalization(
+        #                                 inputs = conv,
+        #                                 axis=-1,
+        #                                 momentum=0.9,
+        #                                 epsilon=0.001,
+        #                                 training = is_training,
+        #                                 name = name
+        #                                 )
         
-        output = tf.nn.leaky_relu(conv_bn)
+        # output = tf.nn.leaky_relu(conv_bn)
 
+        output = conv
         return output
 
     def build_network(self):
