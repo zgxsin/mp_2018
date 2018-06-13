@@ -45,7 +45,9 @@ def main(config):
     # add normalized depth info to the CNN training data, replace rgb with mask_image
     training_input_layer = tf.concat([training_placeholders['rgb'],  training_placeholders['skeleton'],training_placeholders['depth']],4)
     validation_input_layer = tf.concat([validation_placeholders['rgb'], validation_placeholders['skeleton'],validation_placeholders['depth']], 4 )
-
+    
+    # training_input_layer = tf.concat([training_placeholders['rgb'],training_placeholders['depth']],4)
+    # validation_input_layer = tf.concat([validation_placeholders['rgb'],validation_placeholders['depth']], 4)
     ##################
     # Training Model
     ##################
@@ -59,7 +61,7 @@ def main(config):
         cnn_layer_keep_rate = tf.placeholder_with_default(1.0, shape=(), name="cnn_layer_keep_rate")
         cnnModel = CNNModel(config=config['cnn'],
                             placeholders=training_placeholders,
-                            mode='training',keep_rate=cnn_layer_keep_rate ,ema= ema)
+                            mode='training', keep_rate=cnn_layer_keep_rate ,ema= ema)
         cnnModel.build_graph(input_layer=training_input_layer)
 
         trainModel = RNNModel(config=config['rnn'],
@@ -112,9 +114,12 @@ def main(config):
         validModel.build_loss()
 
     # apply moving average
-    ema_op = ema.apply( tf.trainable_variables() )
-    with tf.control_dependencies( [train_op1, ema_op] ):
-        train_op = tf.no_op( name="train_ema" )
+    update_op = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    ema_op = ema.apply(tf.trainable_variables())
+    update_op.append(ema_op)
+    update_op.append(train_op1)
+    with tf.control_dependencies(update_op):
+        train_op = tf.no_op(name="train_ema")
     ##############
     # Monitoring
     ##############
@@ -143,16 +148,19 @@ def main(config):
     ##############################
     # Restoring and Initialization  DaiQi_add
     ##############################
-
     # Load Previous Model and initialize weights
     restored_variables = tf.trainable_variables()
     # change the dence layer
+    # [6 7 10 11 14 15 18 19 20]
+    restored_variables =  [ v  for v in restored_variables if 'gamma' not in v.name]
+    restored_variables = [v for v in restored_variables if 'beta' not in v.name]
     del restored_variables[10:16]
+
     restore_saver = tf.train.Saver(var_list=restored_variables )
     # latest_checkpoint(checkpoint_dir, latest_filename=None)
     # checkpoint_path = tf.train.latest_checkpoint("/cluster/home/guzhou/pretrain_checkpoint_mp2018")
     checkpoint_path = tf.train.latest_checkpoint(
-       "/Users/zhou/Desktop/MP-RemoteFile/for_pretrain")
+      "/Users/zhou/Desktop/MP-RemoteFile/for_pretrain")
     print('Restoring from ', checkpoint_path)
     restore_saver.restore(session, checkpoint_path )
 
@@ -174,9 +182,9 @@ def main(config):
 
 
     # Add the ops to initialize variables.
-    # init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-    # # Actually initialize the variables
-    # session.run(init_op)
+#    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+#    # # Actually initialize the variables
+#    session.run(init_op)
 
     # Register summary ops.
     train_summary_dir = os.path.join(config['model_dir'], "summary", "train")

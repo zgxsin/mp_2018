@@ -1,6 +1,7 @@
 import tensorflow as tf
 from Skeleton import Skeleton
 import numpy as np
+import math
 
 
 def get_mean_and_std(tensor, axis, keepdims=False):
@@ -100,7 +101,7 @@ def img_preprocessing_op_map(image_op):
 
         return image_op_post
 
-def random_crop_rotation_scaling(image_op):
+def random_crop_rotation_scaling(image_op, config):
     """
     Creates preprocessing operations that are going to be applied on a single frame.
 
@@ -114,10 +115,11 @@ def random_crop_rotation_scaling(image_op):
     with tf.name_scope("img_preprocessing3"):
         # first, crop the images
 
-        image_op = tf.random_crop(image_op, size=[tf.shape(image_op)[0], 56, 56, tf.shape(image_op)[3]])
+        image_op = tf.random_crop(image_op, size=[tf.shape(image_op)[0],config['img_height_crop'], config['img_width_crop'], tf.shape(image_op)[3]])
         # todo: radian or ?
         # second, rotate the images
-        angles = int(np.random.uniform(-15,16))
+        angles = math.pi/180 *int(np.random.uniform(-15,16))
+        # print(angles)
         rotated_image_op = tf.contrib.image.rotate(
                             image_op,
                             angles,
@@ -243,22 +245,6 @@ def read_and_decode_sequence(filename_queue, config):
 
         single_sample = tf.concat([seq_rgb, seq_skeleton, seq_depth], axis=3)
 
-        # image_extracted = tf.map_fn(lambda x: tf.image.random_flip_left_right(x, seed=6),
-        #                              elems=image_extracted,
-        #                              dtype=tf.float32,
-        #                              back_prop=False
-        #                              )
-
-
-
-
-        # Normalize RGB images before feeding into the model.
-        # Here we calculate statistics locally (i.e., per sequence sample). You can iterate over the whole dataset once
-        # and calculate global statistics for later use.
-        # rgb_mean, rgb_std = get_mean_and_std(seq_rgb, axis=[0, 1, 2, 3], keepdims=True)
-        # seq_rgb = (seq_rgb - rgb_mean)/rgb_std
-
-
         single_sample = tf.py_func(lambda x: add_salt_pepper_noise(x),
                              [single_sample],
                              tf.float32,)
@@ -266,7 +252,7 @@ def read_and_decode_sequence(filename_queue, config):
         # for the convinience of map_fun
         single_sample = tf.expand_dims(single_sample, axis=0 )
 
-        single_sample = tf.map_fn(lambda x:random_crop_rotation_scaling(x),
+        single_sample = tf.map_fn(lambda x:random_crop_rotation_scaling(x, config),
                                     elems=single_sample,
                                     dtype = tf.float32,
                                     back_prop= False
@@ -274,27 +260,27 @@ def read_and_decode_sequence(filename_queue, config):
 
         single_sample = tf.squeeze(single_sample, [0])
 
-        single_sample.set_shape([None, 56, 56, 7])
+        single_sample.set_shape([None, config['img_height_crop'], config['img_width_crop'], 7])
 
 
-        # skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton[:, 12:68, 20:60, :], axis=[0, 1, 2, 3],
-        #                                                 keepdims=True )
-        # seq_skeleton = (seq_skeleton[:, 12:68, 20:60, :] - skeleton_mean) / skeleton_std
 
-        # seq_skeleton = tf.map_fn( lambda x: img_preprocessing_op_map( x ),
-        #                           elems=seq_skeleton,
-        #                           dtype=tf.float32,
-        #                           back_prop=False
-        #                           )
-
-        # normalize tp [-1,1]
-        # seq_depth = (seq_depth - 128) / 128
-        # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
-        # the same format.
         seq_rgb = single_sample[:,:,:,0:3]
         seq_skeleton = single_sample[:,:,:,3:6]
         seq_depth = single_sample[:,:,:,6]
-        seq_depth = tf.reshape(seq_depth,(-1, 56, 56, 1))
+        seq_depth = tf.reshape(seq_depth,(-1, config['img_height_crop'], config['img_width_crop'], 1))
+
+
+        ## normalize:
+        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton, axis=[0, 1, 2, 3],
+                                                        keepdims=True )
+        seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
+
+        rgb_mean, rgb_std = get_mean_and_std( seq_rgb, axis=[0, 1, 2, 3], keepdims=True )
+        seq_rgb = (seq_rgb - rgb_mean) / rgb_std
+
+        depth_mean, depth_std = get_mean_and_std( seq_depth, axis=[0, 1, 2, 3], keepdims=True )
+        seq_depth = (seq_depth - depth_mean) / depth_std
+
         sample = {}
         sample['rgb'] = seq_rgb
         sample['depth'] = seq_depth
@@ -365,11 +351,15 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         #                    elems=seq_rgb,
         #                    dtype=tf.float32,
         #                    back_prop=False)
-        seq_skeleton = tf.py_func( lambda x: img_preprocessing_op( x ),
+        seq_skeleton = tf.py_func(lambda x: img_preprocessing_op( x ),
                                    [seq_skeleton],
                                    tf.float32,
                                    )
-        seq_skeleton.set_shape( [None, 80, 80, 3] )
+        seq_skeleton.set_shape([None, 80, 80, 3] )
+
+
+
+
 
         mask_result = tf.py_func( lambda x: x > 150,
                                   [seq_segmentation],
@@ -381,15 +371,34 @@ def read_and_decode_sequence_test_data(filename_queue, config):
 
         single_sample = tf.concat([seq_rgb, seq_skeleton, seq_depth], axis=3 )
 
-        single_sample = tf.map_fn(lambda x: tf.image.central_crop(x,central_fraction=0.7),
+        single_sample = tf.map_fn(lambda x: tf.image.resize_image_with_crop_or_pad(x, target_height=config['img_height_crop'], target_width=config['img_width_crop']),
                                   elems=single_sample,
                                   dtype=tf.float32,
                                   back_prop=False)
 
+
+        single_sample.set_shape([None, config['img_height_crop'], config['img_width_crop'], 7])
+
         seq_rgb = single_sample[:, :, :, 0:3]
         seq_skeleton = single_sample[:, :, :, 3:6]
         seq_depth = single_sample[:, :, :, 6]
-        seq_depth = tf.reshape( seq_depth, (-1, 56, 56, 1) )
+        seq_depth = tf.reshape(seq_depth, (-1, config['img_height_crop'], config['img_width_crop'], 1) )
+
+
+        # normaliztion for all inputs
+        skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton, axis=[0, 1, 2, 3],
+                                                        keepdims=True )
+        seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
+
+
+
+        rgb_mean, rgb_std = get_mean_and_std( seq_rgb, axis=[0, 1, 2, 3], keepdims=True )
+        seq_rgb = (seq_rgb - rgb_mean) / rgb_std
+
+        depth_mean, depth_std = get_mean_and_std( seq_depth, axis=[0, 1, 2, 3], keepdims=True )
+        seq_depth = (seq_depth - depth_mean) /depth_std
+
+
 
         # Create a dictionary containing a sequence sample in different modalities. Tensorflow creates mini-batches in
         # the same format.

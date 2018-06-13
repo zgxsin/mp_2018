@@ -10,13 +10,13 @@ config['log_dir'] = './runs/'
 # In case your pre/post-processing scripts generate intermediate results, you may use config['tmp_dir'] to store them.
 config['tmp_dir'] = './tmp/'
 # Path to training, validation and test data folders.
-config['train_data_dir'] = "../train/"
-config['valid_data_dir'] = "../validation/"
-config['test_data_dir'] = "../test/"
-
 # config['train_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/train"
 # config['valid_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/validation/"
 # config['test_data_dir'] = "/cluster/work/riner/users/zgxsin/mp2018/dataset/test/"
+
+config['train_data_dir'] = "../train/"
+config['valid_data_dir'] = "../validation/"
+config['test_data_dir'] = "../test/"
 ##################################################################
 # You can modify the rest or add new fields as you need.
 
@@ -47,6 +47,7 @@ config['print_every_step'] = 50
 # (3) 'average_loss': calculate loss for each time-step by using the same sequence label.
 config['loss_type'] = 'average_logit' # 'last_logit', 'average_logit', 'average_loss'.
 # config['loss_type'] = 'last_logit' # GX_modified
+config['loss_type'] = 'weighted_logit'
 
 # Dataset and Input Pipeline Configuration
 config['inputs'] = {}
@@ -56,6 +57,10 @@ config['inputs']['num_epochs'] = config['num_epochs']
 config['inputs']['batch_size'] = config['batch_size']
 config['inputs']['img_height'] = 80  #Input size.
 config['inputs']['img_width'] = 80
+
+# reshape data size:
+config['inputs']['img_height_crop'] = 64  #Input size.
+config['inputs']['img_width_crop'] = 64
 config['inputs']['img_num_channels'] = 3
 config['inputs']['skeleton_size'] = 180
 ## setting the 3dcnn frame lenth and overlap
