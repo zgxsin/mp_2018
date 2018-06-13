@@ -335,14 +335,6 @@ class CNNModel(Model):
             # frame is regarded as a separate sample. We transform [batch_size, seq_len, height, width, num_channels] to
             # [batch_size*seq_len, height, width, num_channels]
             batch_size, seq_len, height, width, num_channels = self.input_layer.shape
-            # non_temporal_input_dims = [-1, height, width, num_channels]
-            # self.input_layer = tf.reshape(self.input_layer, non_temporal_input_dims)
-
-            # seq_len_array = tf.range(0, seq_len.value)
-            # fist_index = seq_len_array[0:seq_len:8]
-            # second_index = seq_len_array[16:seq_len:8]
-            # length = tf.minimum(tf.size(fist_index), tf.size(second_index))
-
 
             self.new_input_layer = tf.py_func(lambda x: self.reshape_input_layer(x),
                                                 [self.input_layer],
