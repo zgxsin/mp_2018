@@ -148,7 +148,7 @@ class Model():
             with tf.name_scope("cross_entropy_loss"):
 
                 self.reg_loss = self.config['regularization_rate']*tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()
-                                                         if 'bias' not in v.name])
+                                                         if 'kernel' in v.name])
 
                 if self.config['loss_type'] == 'average_loss':
                     # Todo: check further
@@ -217,22 +217,23 @@ class CNNModel(Model):
                             kernel_size = kernel_size,
                             strides=strides,
                             padding='same',
-                            activation=tf.nn.leaky_relu,
+                            # activation=tf.nn.leaky_relu,
+                            activation=None,
                             name = name
                             )
-        #
-        # conv_bn = tf.layers.batch_normalization(
-        #                                 inputs = conv,
-        #                                 axis=-1,
-        #                                 momentum=0.9,
-        #                                 epsilon=0.001,
-        #                                 training = is_training,
-        #                                 name = name
-        #                                 )
-        
-        # output = tf.nn.leaky_relu(conv_bn)
 
-        output = conv
+        conv_bn = tf.layers.batch_normalization(
+                                        inputs = conv,
+                                        axis=-1,
+                                        momentum=0.9,
+                                        epsilon=0.001,
+                                        training = is_training,
+                                        name = name
+                                        )
+        
+        output = tf.nn.leaky_relu(conv_bn)
+
+        # output = conv
         return output
 
     def build_network(self):
