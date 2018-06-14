@@ -5,6 +5,7 @@ import json
 import tensorflow as tf
 from model_input import input_pipeline
 from model import CNNModel, RNNModel
+import numpy as np
 
 from Skeleton import Skeleton
 
@@ -53,7 +54,25 @@ def main(config):
     ##################
     # Create separate graphs for training and validation.
     # Training graph.
-    global_step = tf.Variable(1, name='global_step', trainable=False )
+
+
+    ###################
+    # restore from the trained model
+    ###################
+
+    checkpoint_path_ = tf.train.latest_checkpoint(
+        "/Users/zhou/Desktop/MP-RemoteFile/pretrain_checkpoint_mp2018")
+    checkpoint_path_list = checkpoint_path_.split('-')
+    global_step_value = np.int32(checkpoint_path_list[-1])
+
+    ###################
+    # restore from the trained model
+    ###################
+
+
+    global_step = tf.Variable(global_step_value, name='global_step', trainable=False )
+
+    # global_step = tf.Variable( 1, name='global_step', trainable=False )
     # apply moving average
     ema = tf.train.ExponentialMovingAverage(0.998, global_step)
     with tf.name_scope("Training"):
@@ -167,10 +186,10 @@ def main(config):
     restore_saver = tf.train.Saver(var_list=restored_variables )
     # latest_checkpoint(checkpoint_dir, latest_filename=None)
     # checkpoint_path = tf.train.latest_checkpoint("/cluster/home/guzhou/pretrain_checkpoint_mp2018")
-    checkpoint_path = tf.train.latest_checkpoint(
-      "/Users/zhou/Desktop/MP-RemoteFile/pretrain_checkpoint_mp2018")
-    print('Restoring from ', checkpoint_path)
-    restore_saver.restore(session, checkpoint_path )
+    # checkpoint_path = tf.train.latest_checkpoint(
+    #   checkpoint_path_)
+    print('Restoring from ', checkpoint_path_)
+    restore_saver.restore(session, checkpoint_path_ )
 
     # Initialize remaining uninitialized variables
     all_variables = tf.global_variables() + tf.local_variables()
