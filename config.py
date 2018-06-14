@@ -47,9 +47,9 @@ config['print_every_step'] = 50
 # (1) 'last_logit': calculate loss by using only the last step prediction.
 # (2) 'average_logit': calculate loss by using average of predictions across all steps.
 # (3) 'average_loss': calculate loss for each time-step by using the same sequence label.
-#config['loss_type'] = 'average_logit' # 'last_logit', 'average_logit', 'average_loss'.
+config['loss_type'] = 'average_logit' # 'last_logit', 'average_logit', 'average_loss'.
 # config['loss_type'] = 'last_logit' # GX_modified
-config['loss_type'] = 'weighted_logit'
+#config['loss_type'] = 'weighted_logit'
 
 # Dataset and Input Pipeline Configuration
 config['inputs'] = {}
