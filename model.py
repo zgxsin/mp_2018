@@ -300,6 +300,9 @@ class CNNModel(Model):
                                    name="3dconv5_dropout" )
             pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same')
 
+            pool5 = tf.layers.max_pooling3d( inputs=pool5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
+
+
             self.model_output_raw = pool5
 
     def reshape_input_layer(self, input_layer_1):
