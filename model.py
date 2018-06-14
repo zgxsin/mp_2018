@@ -217,23 +217,23 @@ class CNNModel(Model):
                             kernel_size = kernel_size,
                             strides=strides,
                             padding='same',
-                            # activation=tf.nn.leaky_relu,
-                            activation=None,
+                            activation=tf.nn.leaky_relu,
+                            # activation=None,
                             name = name
                             )
 
-        conv_bn = tf.layers.batch_normalization(
-                                        inputs = conv,
-                                        axis=-1,
-                                        momentum=0.9,
-                                        epsilon=0.001,
-                                        training = is_training,
-                                        name = name
-                                        )
+        # conv_bn = tf.layers.batch_normalization(
+        #                                 inputs = conv,
+        #                                 axis=-1,
+        #                                 momentum=0.9,
+        #                                 epsilon=0.001,
+        #                                 training = is_training,
+        #                                 name = name
+        #                                 )
         
-        output = tf.nn.leaky_relu(conv_bn)
+        # output = tf.nn.leaky_relu(conv_bn)
 
-        # output = conv
+        output = conv
         return output
 
     def build_network(self):

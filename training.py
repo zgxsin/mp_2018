@@ -141,7 +141,9 @@ def main(config):
         validModel.build_loss()
 
     # apply moving average
-    update_op = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    # update_op = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+
+    update_op = []
     ema_op = ema.apply(tf.trainable_variables())
     update_op.append(ema_op)
     update_op.append(train_op1)
