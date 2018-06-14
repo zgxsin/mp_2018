@@ -242,12 +242,12 @@ def read_and_decode_sequence(filename_queue, config):
         # get the human shape mask image
         image_extracted = tf.cast(mask_result, tf.float32)* seq_rgb
 
-        single_sample = tf.concat([seq_rgb, seq_skeleton, seq_depth], axis=3)
+        single_sample = tf.concat([seq_rgb, seq_skeleton, seq_depth, image_extracted], axis=3)
 
         single_sample = tf.py_func(lambda x: add_salt_pepper_noise(x),
                              [single_sample],
                              tf.float32,)
-        single_sample.set_shape([None, 80, 80, 7])
+        single_sample.set_shape([None, 80, 80, 10])
         # for the convinience of map_fun
         single_sample = tf.expand_dims(single_sample, axis=0 )
 
@@ -259,13 +259,16 @@ def read_and_decode_sequence(filename_queue, config):
 
         single_sample = tf.squeeze(single_sample, [0])
 
-        single_sample.set_shape([None, config['img_height_crop'], config['img_width_crop'], 7])
+        single_sample.set_shape([None, config['img_height_crop'], config['img_width_crop'], 10])
 
 
 
         seq_rgb = single_sample[:,:,:,0:3]
         seq_skeleton = single_sample[:,:,:,3:6]
         seq_depth = single_sample[:,:,:,6]
+        image_extracted = single_sample[:, :, :, 7:10]
+
+
         seq_depth = tf.reshape(seq_depth,(-1, config['img_height_crop'], config['img_width_crop'], 1))
 
 
@@ -273,6 +276,10 @@ def read_and_decode_sequence(filename_queue, config):
         skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton, axis=[0, 1, 2, 3],
                                                         keepdims=True )
         seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
+
+        mask_mean, mask_std = get_mean_and_std( image_extracted, axis=[0, 1, 2, 3],
+                                                keepdims=True )
+        image_extracted = (image_extracted - mask_mean) / mask_std
 
         rgb_mean, rgb_std = get_mean_and_std( seq_rgb, axis=[0, 1, 2, 3], keepdims=True )
         seq_rgb = (seq_rgb - rgb_mean) / rgb_std
@@ -358,8 +365,6 @@ def read_and_decode_sequence_test_data(filename_queue, config):
 
 
 
-
-
         mask_result = tf.py_func( lambda x: x > 150,
                                   [seq_segmentation],
                                   tf.bool,
@@ -368,7 +373,7 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         # get the human shape mask image, normalized
         image_extracted = tf.cast( mask_result, tf.float32 ) * seq_rgb
 
-        single_sample = tf.concat([seq_rgb, seq_skeleton, seq_depth], axis=3 )
+        single_sample = tf.concat([seq_rgb, seq_skeleton, seq_depth, image_extracted], axis=3 )
 
         single_sample = tf.map_fn(lambda x: tf.image.resize_image_with_crop_or_pad(x, target_height=config['img_height_crop'], target_width=config['img_width_crop']),
                                   elems=single_sample,
@@ -376,11 +381,13 @@ def read_and_decode_sequence_test_data(filename_queue, config):
                                   back_prop=False)
 
 
-        single_sample.set_shape([None, config['img_height_crop'], config['img_width_crop'], 7])
+        single_sample.set_shape([None, config['img_height_crop'], config['img_width_crop'], 10])
 
         seq_rgb = single_sample[:, :, :, 0:3]
         seq_skeleton = single_sample[:, :, :, 3:6]
         seq_depth = single_sample[:, :, :, 6]
+        image_extracted = single_sample[:, :, :, 7:10]
+
         seq_depth = tf.reshape(seq_depth, (-1, config['img_height_crop'], config['img_width_crop'], 1) )
 
 
@@ -388,6 +395,10 @@ def read_and_decode_sequence_test_data(filename_queue, config):
         skeleton_mean, skeleton_std = get_mean_and_std( seq_skeleton, axis=[0, 1, 2, 3],
                                                         keepdims=True )
         seq_skeleton = (seq_skeleton - skeleton_mean) / skeleton_std
+
+        mask_mean, mask_std = get_mean_and_std(image_extracted, axis=[0, 1, 2, 3],
+                                                        keepdims=True )
+        image_extracted = (image_extracted- mask_mean) / mask_std
 
 
 
