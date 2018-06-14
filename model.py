@@ -195,7 +195,7 @@ class CNNModel(Model):
     - Accepts inputs of rank 5 where a mini-batch has shape of [batch_size, seq_len, height, width, num_channels].
     - Ignores temporal dependency.
     """
-    def __init__(self, config, placeholders, mode, keep_rate = tf.placeholder_with_default(1.0, shape=(), name="default_cnn_keep_rate"), ema = None):
+    def __init__(self, config, placeholders, mode, layers_drop_rate = 0 , ema = None):
         '''
 
         :param config:
@@ -207,7 +207,7 @@ class CNNModel(Model):
         super().__init__(config, placeholders, mode, ema)
 
         self.input_rgb = placeholders['rgb']
-        self.prob = keep_rate
+        self.prob = layers_drop_rate
 
     def bn_conv3d(self, input_layer, num_filters, kernel_size, strides, name = None, is_training = True):
 
@@ -245,15 +245,19 @@ class CNNModel(Model):
             batch_size, clip_num, frames, height, width, num_channels = self.new_input_layer.shape
             input_layer_ = tf.reshape(self.new_input_layer, [-1, frames, height, width, num_channels])
             dimension_first = tf.shape(input_layer_)[0]
-
             conv1 = self.bn_conv3d(
                                 input_layer = input_layer_,
                                 num_filters = self.config['num_filters'][0],
                                 kernel_size = 3, 
                                 strides = (1,1,1),
                                 # is_training = self.is_training
+
                                 )
-            conv1 = tf.nn.dropout(conv1, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][0]], name="3dconv1_dropout")
+
+            conv1 = tf.layers.dropout( conv1, rate=self.prob,
+                                       noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][0]],
+                                       name="3dconv1_dropout", training=self.is_training )
+            # conv1 = tf.nn.dropout(conv1, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][0]], name="3dconv1_dropout")
             pool1 = tf.layers.max_pooling3d(inputs=conv1, pool_size=[1, 2, 2], strides=[1,2,2], padding='same')
 
             conv2 = self.bn_conv3d(
@@ -263,8 +267,12 @@ class CNNModel(Model):
                                 strides = (1,1,1),
                                 # is_training = self.is_training
                                 )
-            conv2 = tf.nn.dropout( conv2, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][1]],
-                                   name="3dconv2_dropout" )
+
+            conv2 = tf.layers.dropout( conv2, rate=self.prob,
+                                       noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][1]],
+                                       name="3dconv2_dropout", training=self.is_training )
+            # conv2 = tf.nn.dropout( conv2, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][1]],
+            #                        name="3dconv2_dropout" )
             pool2 = tf.layers.max_pooling3d(inputs=conv2, pool_size=[1, 2, 2], strides=[1, 2, 2], padding='same')
 
             conv3 = self.bn_conv3d(
@@ -274,8 +282,12 @@ class CNNModel(Model):
                                 strides = (1,1,1),
                                 # is_training = self.is_training
                                 )
-            conv3 = tf.nn.dropout( conv3, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][2]],
-                                   name="3dconv3_dropout" )
+
+            conv3 = tf.layers.dropout( conv3, rate=self.prob,
+                                       noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][2]],
+                                       name="3dconv3_dropout", training=self.is_training )
+            # conv3 = tf.nn.dropout( conv3, keep_prob= self.prob, noise_shape=[dimension_first, frames, 1, 1, self.config['num_filters'][2]],
+            #                        name="3dconv3_dropout" )
             pool3 = tf.layers.max_pooling3d(inputs=conv3, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
             conv4 = self.bn_conv3d(
@@ -285,8 +297,13 @@ class CNNModel(Model):
                                 strides = (1,1,1),
                                 # is_training = self.is_training
                                 )
-            conv4 = tf.nn.dropout( conv4, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/2), 1, 1, self.config['num_filters'][3]],
-                                   name="3dconv4_dropout")
+
+            conv4 = tf.layers.dropout( conv4, rate=self.prob,
+                                       noise_shape=[dimension_first, np.int32( frames.value / 2 ), 1, 1,
+                                                    self.config['num_filters'][3]],
+                                       name="3dconv4_dropout", training=self.is_training )
+            # conv4 = tf.nn.dropout( conv4, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/2), 1, 1, self.config['num_filters'][3]],
+            #                        name="3dconv4_dropout")
             pool4 = tf.layers.max_pooling3d(inputs=conv4, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same' )
 
             conv5 = self.bn_conv3d(
@@ -296,8 +313,13 @@ class CNNModel(Model):
                                 strides = (1,1,1),
                                 # is_training = self.is_training
                                 )
-            conv5 = tf.nn.dropout(conv5, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/4), 1, 1, self.config['num_filters'][4]],
-                                   name="3dconv5_dropout" )
+
+            conv5 = tf.layers.dropout( conv5, rate=self.prob,
+                                       noise_shape=[dimension_first, np.int32( frames.value / 4 ), 1, 1,
+                                                    self.config['num_filters'][4]],
+                                       name="3dconv5_dropout", training=self.is_training )
+            # conv5 = tf.nn.dropout(conv5, keep_prob= self.prob, noise_shape=[dimension_first, np.int32(frames.value/4), 1, 1, self.config['num_filters'][4]],
+            #                        name="3dconv5_dropout" )
             pool5 = tf.layers.max_pooling3d(inputs=conv5, pool_size=[2, 2, 2], strides=[2, 2, 2], padding='same')
 
             pool5 = tf.layers.max_pooling3d( inputs=pool5, pool_size=[2, 1, 1], strides=[2, 1, 1], padding='same' )

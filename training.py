@@ -77,10 +77,9 @@ def main(config):
     ema = tf.train.ExponentialMovingAverage(0.998, global_step)
     with tf.name_scope("Training"):
         # Create model
-        cnn_layer_keep_rate = tf.placeholder_with_default(1.0, shape=(), name="cnn_layer_keep_rate")
         cnnModel = CNNModel(config=config['cnn'],
                             placeholders=training_placeholders,
-                            mode='training', keep_rate=cnn_layer_keep_rate ,ema= ema)
+                            mode='training', layers_drop_rate=config['drop_cnn_layers_rate'] ,ema= ema)
         cnnModel.build_graph(input_layer=training_input_layer)
 
         trainModel = RNNModel(config=config['rnn'],
@@ -263,7 +262,7 @@ def main(config):
                                                                         trainModel.num_correct_predictions,
                                                                         trainModel.loss,
                                                                         train_op],
-                                                                       feed_dict={cnn_layer_keep_rate:config['keep_rate_cov']})
+                                                                       feed_dict={})
             # visual_skele = session.run([training_placeholders['skeleton']])
             # visual_rgb = session.run( [training_placeholders['rgb']] )
             # import matplotlib.pyplot as plt
@@ -283,7 +282,7 @@ def main(config):
                 loss_avg = counter_loss_training/(config['print_every_step'])
                 # Feed average performance.
                 summary_report = session.run(summaries_evaluation,
-                                             feed_dict={accuracy_avg_pl: accuracy_avg, loss_avg_pl: loss_avg, cnn_layer_keep_rate: config['keep_rate_cov']})
+                                             feed_dict={accuracy_avg_pl: accuracy_avg, loss_avg_pl: loss_avg})
                 train_summary_writer.add_summary(summary_report, step)
                 time_elapsed = (time.perf_counter() - start_time)/config['print_every_step']
                 print("[Train/%d] Accuracy: %.3f, Loss: %.3f, time/step = %.3f"%(step,
